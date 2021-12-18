@@ -1,0 +1,18 @@
+[package]
+name = "arctic"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "arctic"
+path = "src/lib.rs"
+
+[dependencies]
+async-trait = "0.1"
+btleplug = "0.9"
+chrono = "0.4"
+futures = "0.3"
+tokio = { version = "1.10.0", features = ["macros", "rt", "rt-multi-thread"] }
+tokio-stream = { version = "0.1", features = ["sync"]}
+uuid = "0.8"
