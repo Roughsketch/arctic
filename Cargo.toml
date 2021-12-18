@@ -1,6 +1,14 @@
 [package]
+authors = ["Maiddog <maiddogsrl@gmail.com>"]
+description = "A Rust libary for handling bluetooth Polar heart rate monitors"
+documentation = "https://docs.rs/arctic"
+homepage = "https://github.com/Roughsketch/arctic"
+keywords = ["polar", "bluetooth", "heartrate"]
+license = "ISC"
 name = "arctic"
-version = "0.1.0"
+readme = "README.md"
+repository = "https://github.com/Roughsketch/arctic.git"
+version = "0.0.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
