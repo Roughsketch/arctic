@@ -1,3 +1,5 @@
+#![feature(result_cloned)]
+
 /// arctic is a library for interacting with bluetooth Polar heart rate devices
 /// It uses btleplug as the bluetooth backend which supports Windows, Mac, and Linux
 ///
@@ -61,15 +63,27 @@ use uuid::Uuid;
 
 use std::sync::Arc;
 
+mod control;
 mod polar_uuid;
-use polar_uuid::{notify_uuid, string_uuid, NotifyUuid, StringUuid};
+
+use control::{ControlPoint, ControlResponse};
+use polar_uuid::{NotifyUuid, StringUuid};
 
 /// Error type for general errors and Ble errors from btleplug
 #[derive(Debug)]
 pub enum Error {
+    /// Not bluetooth adapter found when trying to scan
     NoBleAdaptor,
+    /// Could not create control point link
+    NoControlPoint,
+    /// Could not find a device when trying to connect
+    NoDevice,
+    /// Device is not connected, but function was called that requires it
     NotConnected,
+    /// Device is missing a characteristic that was used
     CharacteristicNotFound,
+    /// Data packets received from device could not be parsed
+    InvalidData,
     /// An error occurred in the underlying BLE library
     BleError(btleplug::Error),
 }
@@ -86,6 +100,8 @@ pub trait EventHandler: Send + Sync {
     ///
     /// Contains information about the heart rate and R-R timing
     async fn heart_rate_update(&self, _ctx: &PolarSensor, _heartrate: u16) {}
+
+    async fn measurement_data(&self, _ctx: &PolarSensor, _data: Vec<u8>) {}
 }
 
 /// Result simplification type
@@ -95,6 +111,12 @@ pub type PolarResult<T> = std::result::Result<T, Error>;
 pub enum NotifyStream {
     Battery,
     HeartRate,
+}
+
+impl From<NotifyStream> for Uuid {
+    fn from(item: NotifyStream) -> Self {
+        NotifyUuid::from(item).into()
+    }
 }
 
 /// The core Polar device structure. Keeps track of connection and event dispatching.
@@ -125,6 +147,8 @@ pub struct PolarSensor {
     ble_device: Option<Peripheral>,
     /// Handler for event callbacks
     event_handler: Option<Arc<dyn EventHandler>>,
+    /// Control point accessor
+    control_point: Option<ControlPoint>,
 }
 
 impl PolarSensor {
@@ -141,6 +165,7 @@ impl PolarSensor {
             ble_manager,
             ble_device: None,
             event_handler: None,
+            control_point: None,
         })
     }
 
@@ -172,10 +197,13 @@ impl PolarSensor {
             if let Some(device) = &self.ble_device {
                 device.connect().await.map_err(Error::BleError)?;
                 device.discover_services().await.map_err(Error::BleError)?;
+
+                let controller = ControlPoint::new(device).await?;
+                self.control_point = Some(controller);
                 return Ok(())
             }
 
-            return Err(Error::NotConnected)
+            return Err(Error::NoDevice)
         }
 
         Err(Error::NoBleAdaptor)
@@ -190,26 +218,11 @@ impl PolarSensor {
     /// - [`Error::CharacteristicNotFound`] if a given notify type is not found on the device
     /// - [`Error::BlueError`] if there is an error subscribing to the event
     pub async fn subscribe(&self, stream: NotifyStream) -> PolarResult<()> {
-        if let Some(ref device) = &self.ble_device {
-            if let Ok(true) = device.is_connected().await {
-                let characteristic = {
-                    match stream {
-                        NotifyStream::Battery => {
-                            self.find_characteristic(notify_uuid(NotifyUuid::BatteryLevel)).await
-                        },
-                        NotifyStream::HeartRate => {
-                            self.find_characteristic(notify_uuid(NotifyUuid::HeartMeasurement)).await
-                        }
-                    }
-                };
+        let device = self.device().await?;
 
-                if let Some(char) = characteristic {
-                    device.subscribe(&char).await.map_err(Error::BleError)?;
-                    return Ok(());
-                }
-
-                return Err(Error::CharacteristicNotFound)
-            }
+        if let Ok(true) = device.is_connected().await {
+            let characteristic = find_characteristic(device, stream.into()).await?;
+            return device.subscribe(&characteristic).await.map_err(Error::BleError)
         }
 
         Err(Error::NotConnected)
@@ -227,11 +240,11 @@ impl PolarSensor {
     }
 
     pub async fn rssi(&self) -> Option<i16> {
-        if let Some(device) = &self.ble_device {
-            if let Ok(properties) = device.properties().await {
-                if let Some(prop) = properties {
-                    return prop.rssi;
-                }
+        let device = self.device().await.ok()?;
+
+        if let Ok(properties) = device.properties().await {
+            if let Some(prop) = properties {
+                return prop.rssi;
             }
         }
 
@@ -239,29 +252,63 @@ impl PolarSensor {
     }
 
     pub async fn info(&self) {
-        println!("Model Number: {:?}", self.read_string(string_uuid(StringUuid::ModelNumber)).await);
-        println!("Manufacturer Name: {:?}", self.read_string(string_uuid(StringUuid::ManufacturerName)).await);
-        println!("Hardware Revision: {:?}", self.read_string(string_uuid(StringUuid::HardwareRevision)).await);
-        println!("Firmware Revision: {:?}", self.read_string(string_uuid(StringUuid::FirmwareRevision)).await);
-        println!("Software Revision: {:?}", self.read_string(string_uuid(StringUuid::SoftwareRevision)).await);
-        println!("Serial Number: {:?}", self.read_string(string_uuid(StringUuid::SerialNumber)).await);
-        println!("System ID: {:?}", self.read(string_uuid(StringUuid::SystemId)).await);
+        println!("Model Number: {:?}", self.read_string(StringUuid::ModelNumber.into()).await);
+        println!("Manufacturer Name: {:?}", self.read_string(StringUuid::ManufacturerName.into()).await);
+        println!("Hardware Revision: {:?}", self.read_string(StringUuid::HardwareRevision.into()).await);
+        println!("Firmware Revision: {:?}", self.read_string(StringUuid::FirmwareRevision.into()).await);
+        println!("Software Revision: {:?}", self.read_string(StringUuid::SoftwareRevision.into()).await);
+        println!("Serial Number: {:?}", self.read_string(StringUuid::SerialNumber.into()).await);
+        println!("System ID: {:?}", self.read(StringUuid::SystemId.into()).await);
     }
 
     pub async fn body_location(&self) {
-        println!("System ID: {:?}", self.read(string_uuid(StringUuid::BodyLocation)).await);
+        println!("Body Location: {:?}", self.read(StringUuid::BodyLocation.into()).await);
+    }
+
+    pub async fn settings(&self) -> PolarResult<ControlResponse> {
+        let controller = self.controller().await?;
+        controller.send_command(self.device().await?, [1, 0].to_vec()).await
+    }
+
+    pub async fn start_measurement(&self) -> PolarResult<ControlResponse> {
+        let controller = self.controller().await?;
+        controller.send_command(self.device().await?, 
+            [2, 0, 0x00, 0x01, 0x34, 0x00, 0x01, 0x01, 0x10, 0x00, 0x02, 0x04, 0xf5, 0x00, 0xf4, 0x01, 0xe8, 0x03, 0xd0, 0x07, 0x04, 0x01, 0x03].to_vec()).await
+    }
+    pub async fn stop_measurement(&self) -> PolarResult<ControlResponse> {
+        let controller = self.controller().await?;
+        controller.send_command(self.device().await?, [3, 0].to_vec()).await
+    }
+
+    pub async fn full_settings(&self) -> PolarResult<ControlResponse> {
+        let controller = self.controller().await?;
+        controller.send_command(self.device().await?, [4, 0].to_vec()).await
+    }
+
+    async fn controller(&self) -> PolarResult<&ControlPoint> {
+        if let Some(controller) = &self.control_point {
+            return Ok(controller);
+        }
+
+        Err(Error::NoControlPoint)
+    }
+
+    async fn device(&self) -> PolarResult<&Peripheral> {
+        if let Some(device) = &self.ble_device {
+            return Ok(device);
+        }
+
+        Err(Error::NoDevice)
     }
 
     async fn read(&self, uuid: Uuid) -> PolarResult<Vec<u8>> {
-        if let Some(device) = &self.ble_device {
-            if let Some(char) = self.find_characteristic(uuid).await {
-                return device.read(&char).await.map_err(Error::BleError);
-            }
+        let device = self.device().await?;
 
-            return Err(Error::CharacteristicNotFound);
+        if let Ok(char) = find_characteristic(device, uuid).await {
+            return device.read(&char).await.map_err(Error::BleError);
         }
 
-        Err(Error::NotConnected)
+        return Err(Error::CharacteristicNotFound);
     }
 
     async fn read_string(&self, uuid: Uuid) -> PolarResult<String> {
@@ -286,8 +333,15 @@ impl PolarSensor {
             let mut notification_stream = device.notifications().await.map_err(Error::BleError)?;
             // Process while the BLE connection is not broken or stopped.
             while let Some(data) = notification_stream.next().await {
-                if data.uuid == notify_uuid(NotifyUuid::HeartMeasurement) {
-                    println!("Data: {:?}", data.value);
+                if data.uuid == NotifyUuid::BatteryLevel.into() {
+                    let battery = data.value[0];
+                    // println!("Battery update: {}", battery);
+
+                    if let Some(eh) = &self.event_handler {
+                        eh.battery_update(battery).await;
+                    }
+                } else if data.uuid == NotifyUuid::HeartMeasurement.into() {
+                    // println!("Data: {:?}", data.value);
 
                     if let Some(eh) = &self.event_handler {
                         eh.heart_rate_update(self, data.value[1].into()).await;
@@ -297,31 +351,11 @@ impl PolarSensor {
         
                     // println!("{}, {}", now.timestamp_millis() - start, hrdata.heart_rate);
                     // println!("RR: {:?}", hrdata.rrs);
-                } else if data.uuid == notify_uuid(NotifyUuid::BatteryLevel) {
-                    let battery = data.value[0];
-                    println!("Battery update: {}", battery);
-
-                    if let Some(eh) = &self.event_handler {
-                        eh.battery_update(battery).await;
-                    }
                 }
             }
         }
 
         Ok(())
-    }
-
-    async fn find_characteristic(&self, uuid: Uuid) -> Option<Characteristic> {
-        if let Some(device) = &self.ble_device {
-            let characteristics = device.characteristics(); 
-            if let Some(characteristic) = characteristics.iter().find(|c| c.uuid == uuid) {
-                Some(characteristic.clone())
-            } else {
-                None
-            }
-        } else {
-            None
-        }
     }
 
     async fn find_device(&self, central: &Adapter) -> Option<Peripheral> {
@@ -340,4 +374,13 @@ impl PolarSensor {
 
         None
     }
+}
+
+/// Private helper to find characteristics from a uuid
+async fn find_characteristic(device: &Peripheral, uuid: Uuid) -> PolarResult<Characteristic> {
+    device.characteristics()
+        .iter()
+        .find(|c| c.uuid == uuid)
+        .ok_or(Error::CharacteristicNotFound)
+        .cloned()
 }
