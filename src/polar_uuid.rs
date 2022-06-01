@@ -30,6 +30,7 @@ impl From<NotifyStream> for NotifyUuid {
         match item {
             NotifyStream::Battery => NotifyUuid::BatteryLevel,
             NotifyStream::HeartRate => NotifyUuid::HeartMeasurement,
+            NotifyStream::MeasurementData => NotifyUuid::MeasurementData,
         }
     }
 }

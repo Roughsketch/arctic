@@ -16,6 +16,10 @@ edition = "2021"
 name = "arctic"
 path = "src/lib.rs"
 
+[[bin]]
+name = "example"
+path = "src/example.rs"
+
 [dependencies]
 async-trait = "0.1"
 btleplug = "0.9"
