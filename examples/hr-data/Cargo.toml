@@ -1,0 +1,9 @@
+[package]
+name = "hr-data"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[dependencies]
+arctic = { path = "../../" }
+tokio = "1.19.2"

@@ -1,0 +1,9 @@
+[workspace]
+
+members = [
+	"get-stream-settings",
+	"hr-data",
+	"print-everything",
+	"multi-threaded",
+	"cli-app",
+]

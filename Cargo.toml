@@ -1,5 +1,5 @@
 [package]
-authors = ["Maiddog <maiddogsrl@gmail.com>"]
+authors = ["Maiddog <maiddogsrl@gmail.com>", "BeaconBrigade <beaconbrigade@gmail.com>"]
 description = "A Rust libary for handling bluetooth Polar heart rate monitors"
 documentation = "https://docs.rs/arctic"
 homepage = "https://github.com/Roughsketch/arctic"
@@ -8,17 +8,13 @@ license = "MIT"
 name = "arctic"
 readme = "README.md"
 repository = "https://github.com/Roughsketch/arctic.git"
-version = "0.0.1"
+version = "1.0.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "arctic"
 path = "src/lib.rs"
-
-[[bin]]
-name = "example"
-path = "src/example.rs"
 
 [dependencies]
 async-trait = "0.1"
@@ -28,3 +24,6 @@ futures = "0.3"
 tokio = { version = "1.10.0", features = ["macros", "rt", "rt-multi-thread"] }
 tokio-stream = { version = "0.1", features = ["sync"]}
 uuid = "0.8"
+
+[dev-dependencies]
+tokio-test = "*"

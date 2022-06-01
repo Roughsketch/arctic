@@ -1,3 +1,7 @@
+//! # Polar UUID
+//!
+//! This module contains constants and enums related to all of the uuid characteristics of the Polar H10
+
 use crate::NotifyStream;
 use uuid::Uuid;
 
@@ -31,6 +35,7 @@ impl From<NotifyStream> for NotifyUuid {
             NotifyStream::Battery => NotifyUuid::BatteryLevel,
             NotifyStream::HeartRate => NotifyUuid::HeartMeasurement,
             NotifyStream::MeasurementData => NotifyUuid::MeasurementData,
+            NotifyStream::MeasurementCP => NotifyUuid::MeasurementCP,
         }
     }
 }
