@@ -2,6 +2,11 @@
 
 Work in progress Rust library for handling Polar bluetooth heart rate monitors. Currently only targetting support for H10 due to lack of other devices.
 
+### Note for MacOS
+
+Using Btleplug on MacOS will require you to give your terminal (or whatever app you're using) permissions to use Bluetooth. 
+View [here](https://github.com/deviceplug/btleplug#macos-permissions-note) to see how to resolve this issue.
+
 # Example
 
 ```rust,ignore

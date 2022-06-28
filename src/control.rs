@@ -1,4 +1,9 @@
-use crate::{PolarResult, Error, find_characteristic};
+//! # Control
+//!
+//! Control contains structures related to sending and receiving messages over PMD control point.
+//!
+
+use crate::{find_characteristic, Error, H10MeasurementType, PolarResult};
 
 use btleplug::api::{Characteristic, Peripheral as _, WriteType};
 use btleplug::platform::Peripheral;
@@ -9,13 +14,17 @@ const PMD_CP_UUID: Uuid = Uuid::from_u128(0xfb005c81_02e7_f387_1cad_8acd2d8df0c8
 /// Polar Measurement Data... Data (Notify)
 const PMD_DATA_UUID: Uuid = Uuid::from_u128(0xfb005c82_02e7_f387_1cad_8acd2d8df0c8);
 
-#[derive(Debug, PartialEq)]
-enum ControlPointCommand {
+/// Command options to write to the control point
+#[derive(Debug, PartialEq, Eq)]
+pub enum ControlPointCommand {
+    /// Do nothing
     Null = 0,
+    /// Get the measurement settings of every data type in `PolarSensor.data_type`
     GetMeasurementSettings,
+    /// Start measurement of every data type in `PolarSensor.data_type`
     RequestMeasurementStart,
+    /// Stop all measurements in `PolarSensor.data_type`
     StopMeasurement,
-    GetSdkModeMeasurementSettings,
 }
 
 impl TryFrom<u8> for ControlPointCommand {
@@ -27,7 +36,6 @@ impl TryFrom<u8> for ControlPointCommand {
             1 => Ok(ControlPointCommand::GetMeasurementSettings),
             2 => Ok(ControlPointCommand::RequestMeasurementStart),
             3 => Ok(ControlPointCommand::StopMeasurement),
-            4 => Ok(ControlPointCommand::GetSdkModeMeasurementSettings),
             _ => {
                 println!("Invalid ControlPointCommand {}", val);
                 Err(())
@@ -36,21 +44,36 @@ impl TryFrom<u8> for ControlPointCommand {
     }
 }
 
-#[derive(Debug, PartialEq)]
-enum ControlPointResponseCode {
+/// Response code returned after a write to PMD control point
+#[derive(Debug, PartialEq, Eq)]
+pub enum ControlPointResponseCode {
+    /// Command was successful
     Success = 0,
+    /// Control point command is not supported by device
     InvalidOpCode,
+    /// Device does not know the specified measurement type
     InvalidMeasurementType,
+    /// This measurement is not supported by device
     NotSupported,
+    /// Given length does not match the received data
     InvalidLength,
+    /// Contains parameters that prevent successful handling of request
     InvalidParameter,
+    /// Device is already in the requested state
     AlreadyInState,
+    /// Requested resolution is not supported by device
     InvalidResolution,
+    /// Requested sample rate is not supported by device
     InvalidSampleRate,
+    /// Requested range is not supported
     InvalidRange,
+    /// Connection MTU does not match device required MTU
     InvalidMTU,
+    /// Request contains invalid number of channels
     InvalidNumberOfChannels,
+    /// Device is in invalid state
     InvalidState,
+    /// Device is in charger and does not support requests
     DeviceInCharger,
 }
 
@@ -81,44 +104,7 @@ impl TryFrom<u8> for ControlPointResponseCode {
     }
 }
 
-#[derive(Debug, PartialEq)]
-enum MeasurementType {
-    Ecg,
-    Ppg,
-    Acc,
-    Ppi,
-    Bioz,
-    Gyro,
-    Mgn,
-    Barometer,
-    Ambient,
-    SdkMode,
-}
-
-impl TryFrom<u8> for MeasurementType {
-    type Error = ();
-
-    fn try_from(val: u8) -> Result<MeasurementType, ()> {
-        match val {
-            0 => Ok(MeasurementType::Ecg),
-            1 => Ok(MeasurementType::Ppg),
-            2 => Ok(MeasurementType::Acc),
-            3 => Ok(MeasurementType::Ppi),
-            4 => Ok(MeasurementType::Bioz),
-            5 => Ok(MeasurementType::Gyro),
-            6 => Ok(MeasurementType::Mgn),
-            7 => Ok(MeasurementType::Barometer),
-            8 => Ok(MeasurementType::Ambient),
-            9 => Ok(MeasurementType::SdkMode),
-            _ => {
-                println!("Invalid MeasurementType {}", val);
-                Err(())
-            }
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 enum ResponseCode {
     Success,
     InvalidHandle,
@@ -171,67 +157,187 @@ impl TryFrom<u8> for ResponseCode {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+enum SettingType {
+    SampleRate,
+    Resolution,
+    Range,
+}
+
+impl SettingType {
+    fn from(byte: u8) -> SettingType {
+        match byte {
+            0x00 => SettingType::SampleRate,
+            0x01 => SettingType::Resolution,
+            _ => SettingType::Range,
+        }
+    }
+}
+
+enum PmdByteType {
+    Setting,
+    ArrLen,
+    Data,
+}
+
+/// Struct to store the settings for a specific stream on your device
+#[derive(Debug, PartialEq, Eq)]
+pub struct StreamSettings {
+    ty: H10MeasurementType,
+    resolution: u8,
+    range: Option<Vec<u8>>,
+    sample_rate: Vec<u8>,
+}
+
+impl StreamSettings {
+    /// Create new stream settings
+    pub fn new(resp: &ControlResponse) -> PolarResult<StreamSettings> {
+        if *resp.opcode() != ControlPointCommand::GetMeasurementSettings {
+            return Err(Error::WrongResponse);
+        }
+
+        let mut resolution: u8 = 0;
+        let mut ranges: Vec<u8> = vec![];
+        let mut sample_rate: Vec<u8> = vec![];
+
+        let mut setting: SettingType = SettingType::from(resp.parameters[0]);
+        let mut next_byte: PmdByteType = PmdByteType::ArrLen;
+        let mut len_remaining = 0u8;
+
+        let mut data = resp.parameters()[1..].iter();
+
+        while let Some(i) = data.next() {
+            match next_byte {
+                PmdByteType::Setting => {
+                    setting = SettingType::from(*i);
+                    next_byte = PmdByteType::ArrLen;
+                }
+                PmdByteType::ArrLen => {
+                    len_remaining = *i;
+                    next_byte = PmdByteType::Data;
+                }
+                PmdByteType::Data => {
+                    match setting {
+                        SettingType::SampleRate => {
+                            sample_rate.push(*i);
+                            let _ = data.next().unwrap();
+                        }
+                        SettingType::Resolution => {
+                            resolution = *i;
+                            let _ = data.next().unwrap();
+                        }
+                        SettingType::Range => {
+                            ranges.push(*i);
+                            let _ = data.next().unwrap();
+                        }
+                    }
+
+                    len_remaining -= 1;
+                    if len_remaining == 0 {
+                        next_byte = PmdByteType::Setting;
+                    }
+                }
+            }
+        }
+
+        let range = if !ranges.is_empty() {
+            Some(ranges)
+        } else {
+            None
+        };
+
+        Ok(StreamSettings {
+            ty: *resp.data_type(),
+            resolution,
+            range,
+            sample_rate,
+        })
+    }
+
+    /// Getter for the resolution (in bits)
+    pub fn resolution(&self) -> u8 {
+        self.resolution
+    }
+
+    /// Getter for range (ACC only) (in G)
+    pub fn range(&self) -> &Option<Vec<u8>> {
+        &self.range
+    }
+
+    /// Getter for sample rates (in Hz)
+    pub fn sample_rate(&self) -> &Vec<u8> {
+        &self.sample_rate
+    }
+}
+
+/// Store data returned from the device after a write to the control point
 #[derive(Debug)]
 pub struct ControlResponse {
-    response_code: ResponseCode,
     opcode: ControlPointCommand,
-    measurement_type: MeasurementType,
+    measurement_type: H10MeasurementType,
     status: ControlPointResponseCode,
     parameters: Vec<u8>,
-    more: bool,
 }
 
 impl ControlResponse {
-    async fn new(data: Vec<u8>) -> PolarResult<ControlResponse> {
+    /// Create new `ControlResponse`
+    pub async fn new(data: Vec<u8>) -> PolarResult<ControlResponse> {
         // We need at least 4 bytes for a complete packet
         if data.len() < 4 {
             return Err(Error::InvalidData);
         }
-
-        let response_code = ResponseCode::try_from(data[0]).map_err(|_| Error::InvalidData)?;
+        // check that our response is a control point response
+        if data[0] != 0xf0 {
+            return Err(Error::InvalidData);
+        }
         let opcode = ControlPointCommand::try_from(data[1]).map_err(|_| Error::InvalidData)?;
-        let measurement_type = MeasurementType::try_from(data[2]).map_err(|_| Error::InvalidData)?;
+        let measurement_type =
+            H10MeasurementType::try_from(data[2]).map_err(|_| Error::InvalidData)?;
         let status = ControlPointResponseCode::try_from(data[3]).map_err(|_| Error::InvalidData)?;
         let mut parameters = Vec::new();
-        let more = {
-            if status == ControlPointResponseCode::Success {
-                if data.len() > 5 {
-                    parameters = data[5..].to_vec();
-                }
-                data.len() > 4 && data[4] != 0
-            } else {
-                false
-            }
-        };
+
+        if data.len() > 5 {
+            parameters = data[5..].to_vec();
+        }
 
         Ok(ControlResponse {
-            response_code,
             opcode,
             measurement_type,
             status,
             parameters,
-            more,
         })
     }
 
-    fn add_parameters(&mut self, data: Vec<u8>) -> bool {
-        if data[0] != 0 {
-            self.parameters.append(&mut data[1..].to_vec());
-        } else {
-            self.more = false;
-        }
+    /// Return extra parameters of this response
+    pub fn parameters(&self) -> &Vec<u8> {
+        &self.parameters
+    }
 
-        self.more
+    /// Return opcode of this response
+    pub fn opcode(&self) -> &ControlPointCommand {
+        &self.opcode
+    }
+
+    /// Get measurement type
+    pub fn data_type(&self) -> &H10MeasurementType {
+        &self.measurement_type
+    }
+
+    /// Get response status
+    pub fn status(&self) -> &ControlPointResponseCode {
+        &self.status
     }
 }
 
-#[derive(Debug)]
+/// Struct that has access to the PMD control point point and PMD data
+#[derive(Debug, PartialEq, Eq)]
 pub struct ControlPoint {
     control_point: Characteristic,
     measurement_data: Characteristic,
 }
 
 impl ControlPoint {
+    /// Create new `ControlPoint`
     pub async fn new(device: &Peripheral) -> PolarResult<ControlPoint> {
         let control_point = find_characteristic(device, PMD_CP_UUID).await?;
         let measurement_data = find_characteristic(device, PMD_DATA_UUID).await?;
@@ -242,32 +348,72 @@ impl ControlPoint {
         })
     }
 
-    pub async fn send_command(&self, device: &Peripheral, data: Vec<u8>) -> PolarResult<ControlResponse> {
-        println!("Writing cmd: {:?}", data);
+    /// Send command to Control Point
+    pub async fn send_command(&self, device: &Peripheral, data: Vec<u8>) -> PolarResult<()> {
         self.write(device, data).await?;
 
-        let response_data = self.read(device).await?;
-        println!("Read response: {:?}", response_data);
-        let mut response = ControlResponse::new(response_data).await?;
-
-        while response.more {
-            let response_data = self.read(device).await?;
-            println!("Read response (more): {:?}", response_data);
-            response.add_parameters(response_data);
-        }
-
-        Ok(response)
+        Ok(())
     }
 
     async fn write(&self, device: &Peripheral, data: Vec<u8>) -> PolarResult<()> {
-        device.write(&self.control_point, &data, WriteType::WithResponse)
+        device
+            .write(&self.control_point, &data, WriteType::WithResponse)
             .await
             .map_err(Error::BleError)
     }
 
-    async fn read(&self, device: &Peripheral) -> PolarResult<Vec<u8>> {
-        device.read(&self.control_point)
+    /// Read data from control point (for reading the features of a device)
+    pub async fn read(&self, device: &Peripheral) -> PolarResult<Vec<u8>> {
+        device
+            .read(&self.control_point)
             .await
             .map_err(Error::BleError)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    // for async testing
+    macro_rules! aw {
+        ($e:expr) => {
+            tokio_test::block_on($e)
+        };
+    }
+
+    #[test]
+    fn settings_ecg() {
+        let norm = StreamSettings {
+            ty: H10MeasurementType::Ecg,
+            resolution: 14,
+            range: None,
+            sample_rate: vec![130],
+        };
+
+        let data = aw!(ControlResponse::new(vec![
+            0xf0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x82, 0x00, 0x01, 0x01, 0x0e, 0x00
+        ]))
+        .unwrap();
+
+        assert_eq!(norm, StreamSettings::new(&data).unwrap());
+    }
+
+    #[test]
+    fn settings_acc() {
+        let norm = StreamSettings {
+            ty: H10MeasurementType::Acc,
+            resolution: 16,
+            range: Some(vec![2, 4, 8]),
+            sample_rate: vec![25, 50, 100, 200],
+        };
+
+        let data = aw!(ControlResponse::new(vec![
+            0xf0, 0x01, 0x02, 0x00, 0x00, 0x00, 0x04, 0x19, 0x00, 0x32, 0x00, 0x64, 0x00, 0xC8,
+            0x00, 0x01, 0x01, 0x10, 0x00, 0x02, 0x03, 0x02, 0x00, 0x04, 0x00, 0x08, 0x00
+        ]))
+        .unwrap();
+
+        assert_eq!(norm, StreamSettings::new(&data).unwrap());
     }
 }
