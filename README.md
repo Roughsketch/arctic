@@ -1,60 +1,20 @@
+[![docs-badge][]][docs] [![crates.io version]][crates.io link]
 # Arctic
 
-Work in progress Rust library for handling Polar bluetooth heart rate monitors. Currently only targetting support for H10 due to lack of other devices.
+Rust library for handling Polar bluetooth heart rate monitors.
+
+Currently only targetting support for H10 due to lack of other devices.
 
 ### Note for MacOS
 
 Using Btleplug on MacOS will require you to give your terminal (or whatever app you're using) permissions to use Bluetooth. 
 View [here](https://github.com/deviceplug/btleplug#macos-permissions-note) to see how to resolve this issue.
 
-# Example
+# Examples
 
-```rust,ignore
-use arctic::{async_trait};
+There are several examples in the [examples folder](https://github.com/Roughsketch/arctic/tree/main/examples)
 
-struct Handler;
-
-#[async_trait]
-impl arctic::EventHandler for Handler {
-    async fn battery_update(&self, battery_level: u8) {
-        println!("Battery: {}", battery_level);
-    }
-
-    async fn heartrate_update(&self, _ctx: &arctic::PolarSensor, heartrate: u16) {
-        println!("Heart rate: {}", heartrate);
-    }
-}
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut polar = arctic::PolarSensor::new("7B45F72B".to_string()).await.unwrap();
-    
-    while !polar.is_connected().await {
-        match polar.connect().await {
-            Err(arctic::Error::NoBleAdaptor) => {
-                println!("No bluetooth adapter found");
-                return Ok(());
-            },
-            Err(why) => println!("Could not connect: {:?}", why),
-            _ => {},
-        }
-    }
-
-    if let Err(why) = polar.subscribe(arctic::NotifyStream::Battery).await {
-        println!("Could not subscribe to battery notifications: {:?}", why)
-    }
-
-    if let Err(why) = polar.subscribe(arctic::NotifyStream::HeartRate).await {
-        println!("Could not subscribe to heart rate notifications: {:?}", why)
-    }
-
-
-    polar.event_handler(Handler);
-    let result = polar.event_loop().await;
-
-    println!("No more data: {:?}", result);
-    
-    Ok(())
-
-}
-```
+[crates.io link]: https://crates.io/crates/arctic
+[crates.io version]: https://img.shields.io/crates/v/arctic.svg?style=flat-square
+[docs]: https://docs.rs/arctic
+[docs-badge]: https://img.shields.io/badge/docs-online-5023dd.svg?style=flat-square
