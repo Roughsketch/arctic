@@ -26,4 +26,4 @@ tokio-stream = { version = "0.1", features = ["sync"]}
 uuid = "0.8"
 
 [dev-dependencies]
-tokio-test = "*"
+tokio-test = "0.4"
