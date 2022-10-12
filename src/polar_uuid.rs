@@ -1,6 +1,6 @@
 //! # Polar UUID
 //!
-//! This module contains constants and enums related to all of the uuid characteristics of the Polar H10
+//! This module contains constants and enums related to all of the UUID characteristics of the Polar H10
 
 use crate::NotifyStream;
 use uuid::Uuid;

@@ -1,6 +1,6 @@
 [package]
 authors = ["Maiddog <maiddogsrl@gmail.com>", "BeaconBrigade <beaconbrigade@gmail.com>"]
-description = "A Rust libary for handling bluetooth Polar heart rate monitors"
+description = "A Rust libary for handling Bluetooth Polar heart rate monitors"
 documentation = "https://docs.rs/arctic"
 homepage = "https://github.com/Roughsketch/arctic"
 keywords = ["polar", "bluetooth", "heartrate"]

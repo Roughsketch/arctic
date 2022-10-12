@@ -1,6 +1,6 @@
 //! # Response
 //!
-//! Response contains types related to PMD data respones. Structures to interpret this data are found here
+//! Response contains types related to PMD data responses. Structures to interpret this data are found here
 //!
 
 use crate::{Error, H10MeasurementType, PolarResult};
@@ -40,7 +40,7 @@ fn bytes_to_data(data: &[u8], len: usize) -> i32 {
     }
 }
 
-/// Struct for reveiving measurement type data on PMD data
+/// Struct for receiving measurement type data on PMD data
 #[derive(Debug)]
 pub struct PmdRead {
     data_type: H10MeasurementType,
@@ -92,7 +92,7 @@ impl PmdRead {
         &self.data_type
     }
 
-    /// Return timestamp of this data
+    /// Return time stamp of this data
     pub fn time_stamp(&self) -> u64 {
         self.time_stamp
     }
@@ -106,7 +106,7 @@ impl PmdRead {
 /// Enum to store which kind of data was received
 #[derive(Debug)]
 pub enum PmdData {
-    /// Electrocardiagram
+    /// Electrocardiogram
     Ecg(Ecg),
     /// Acceleration
     Acc(Acc),
@@ -212,7 +212,7 @@ impl HeartRate {
         Ok(HeartRate { bpm, rr })
     }
 
-    /// Get BPM of heartrate measurement
+    /// Get BPM of heart rate measurement
     pub fn bpm(&self) -> &u8 {
         &self.bpm
     }

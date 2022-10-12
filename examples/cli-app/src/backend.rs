@@ -1,4 +1,4 @@
-// Interaction with bluetooth
+// Interaction with Bluetooth
 
 use std::sync::Mutex;
 use arctic::{EventHandler, PmdRead, PolarSensor};
@@ -53,7 +53,7 @@ pub async fn init(polar: &mut PolarSensor, rx: watch::Receiver<bool>) -> Result<
     while !polar.is_connected().await {
         match polar.connect().await {
             Err(arctic::Error::NoBleAdaptor) => {
-                eprintln!("No bluetooth adapter found");
+                eprintln!("No Bluetooth adapter found");
                 return Ok(());
             }
             Err(why) => eprintln!("Could not connect: {:?}", why),

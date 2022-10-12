@@ -1,9 +1,9 @@
 [![docs-badge][]][docs] [![crates.io version]][crates.io link]
 # Arctic
 
-Rust library for handling Polar bluetooth heart rate monitors.
+Rust library for handling Polar Bluetooth heart rate monitors.
 
-Currently only targetting support for H10 due to lack of other devices.
+Currently only targeting support for H10 due to lack of other devices.
 
 ### Note for MacOS
 

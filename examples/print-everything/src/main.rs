@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     while !polar.is_connected().await {
         match polar.connect().await {
             Err(arctic::Error::NoBleAdaptor) => {
-                println!("No bluetooth adapter found");
+                println!("No Bluetooth adapter found");
                 return Ok(());
             }
             Err(why) => println!("Could not connect: {:?}", why),

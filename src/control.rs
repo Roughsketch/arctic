@@ -313,7 +313,7 @@ impl ControlResponse {
         &self.parameters
     }
 
-    /// Return opcode of this response
+    /// Return op code of this response
     pub fn opcode(&self) -> &ControlPointCommand {
         &self.opcode
     }

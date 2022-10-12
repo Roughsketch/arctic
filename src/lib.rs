@@ -1,7 +1,7 @@
 //! # Arctic
 //!
-//! arctic is a library for interacting with bluetooth Polar heart rate devices.
-//! It uses btleplug as the bluetooth backend which supports Windows, Mac, and Linux
+//! arctic is a library for interacting with Bluetooth Polar heart rate devices.
+//! It uses btleplug as the Bluetooth backend which supports Windows, Mac, and Linux
 //!
 //! ## Usage
 //!
@@ -30,8 +30,8 @@
 //!     while !polar.is_connected().await {
 //!         match polar.connect().await {
 //!             Err(ArcticError::NoBleAdaptor) => {
-//!                 // If there's no bluetooth adapter this library cannot work, so return.
-//!                 println!("No bluetooth adapter found");
+//!                 // If there's no Bluetooth adapter this library cannot work, so return.
+//!                 println!("No Bluetooth adapter found");
 //!                 return Ok(());
 //!             }
 //!             Err(why) => println!("Could not connect: {:?}", why),
@@ -78,7 +78,7 @@ pub use response::{Acc, Ecg, HeartRate, PmdData, PmdRead};
 /// Error type for general errors and Ble errors from btleplug
 #[derive(Debug)]
 pub enum Error {
-    /// Not bluetooth adapter found when trying to scan
+    /// Not Bluetooth adapter found when trying to scan
     NoBleAdaptor,
     /// Could not create control point link
     NoControlPoint,
@@ -232,7 +232,7 @@ pub enum NotifyStream {
     HeartRate,
     /// Receive updates from the control points, only for use within the library
     MeasurementCP,
-    /// Receive updates from the PMD data stream (acceleration or ecg)
+    /// Receive updates from the PMD data stream (acceleration or ECG)
     MeasurementData,
 }
 
@@ -252,13 +252,13 @@ impl From<NotifyStream> for Uuid {
 /// // Create the initial object. The new function takes a device ID which it
 /// // will use to find the device to connect to.
 /// // Internally, this will set the device_id and create a
-/// // a bluetooth connection manager, but it will not connect.
+/// // a Bluetooth connection manager, but it will not connect.
 /// # use arctic::PolarSensor;
 /// # #[tokio::main]
 /// # async fn main() {
 /// let mut polar = PolarSensor::new("7B45F72B".to_string()).await.unwrap();
 ///
-/// // Do the actual connection. This will find the device and start the bluetooth connection
+/// // Do the actual connection. This will find the device and start the Bluetooth connection
 /// polar.connect().await.unwrap();
 /// # }
 /// // Can now subscribe to events, set event handler, run event_loop, etc
@@ -272,22 +272,22 @@ pub struct PolarSensor {
     ble_device: Option<Peripheral>,
     /// Handler for event callbacks
     event_handler: Option<Arc<dyn EventHandler>>,
-    /// Control point accessor
+    /// Control point accessory
     control_point: Option<ControlPoint>,
     /// Current type of info gathered
     data_type: Option<Vec<H10MeasurementType>>,
     /// Range of 2G, 4G or 8G (only for ACC)
     range: u8,
-    /// Sample rate in hz
+    /// Sample rate in Hz
     sample_rate: u8,
 }
 
 impl PolarSensor {
-    /// Creates a new PolarSensor.
+    /// Creates a new [`PolarSensor`].
     ///
     /// # Errors
     ///
-    /// Returns a [`Error::BleError`] if the bluetooth manager could not be created
+    /// Returns a [`Error::BleError`] if the Bluetooth manager could not be created
     pub async fn new(device_id: String) -> PolarResult<PolarSensor> {
         let ble_manager = Manager::new().await.map_err(Error::BleError)?;
 
@@ -312,13 +312,13 @@ impl PolarSensor {
     /// # Errors
     ///
     /// Returns a [`Error::BleError`] if:
-    /// - Unable to get bluetooth adapters
+    /// - Unable to get Bluetooth adapters
     /// - Unable to scan for devices
     /// - Unable to discover services for a device
     /// Also returns [`Error::NoBleAdaptor`] if there are no adapters available
     /// Can also return [`Error::NotConnected`] if no device was found
     pub async fn connect(&mut self) -> PolarResult<()> {
-        // get the first bluetooth adapter
+        // get the first Bluetooth adapter
         let adapters_result = self.ble_manager.adapters().await.map_err(Error::BleError);
 
         if let Ok(adapters) = adapters_result {
@@ -406,7 +406,7 @@ impl PolarSensor {
         false
     }
 
-    /// Returns the rssi of your device and the H10, or None if you have no device
+    /// Returns the RSSI of your device and the H10, or None if you have no device
     pub async fn rssi(&self) -> Option<i16> {
         let device = self.device().await.ok()?;
 
@@ -805,7 +805,7 @@ impl PolarSensor {
     }
 }
 
-/// Private helper to find characteristics from a uuid
+/// Private helper to find characteristics from a UUID
 async fn find_characteristic(device: &Peripheral, uuid: Uuid) -> PolarResult<Characteristic> {
     device
         .characteristics()
