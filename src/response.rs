@@ -200,7 +200,9 @@ impl HeartRate {
         let mut rr_samp = vec![];
 
         for i in 0..samples {
-            rr_samp.push(((bytes_to_data(&data[i * 2 + 2..i * 2 + 4], 2) as u32 * 128) / 125) as u16); // rr values are stored as 1024ths of a second, convert to ms
+            rr_samp
+                .push(((bytes_to_data(&data[i * 2 + 2..i * 2 + 4], 2) as u32 * 128) / 125) as u16);
+            // rr values are stored as 1024ths of a second, convert to ms
         }
 
         let rr = if !rr_samp.is_empty() {
