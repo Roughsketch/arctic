@@ -1,11 +1,11 @@
 //! # Arctic
 //!
 //! arctic is a library for interacting with Bluetooth Polar heart rate devices.
-//! It uses btleplug as the Bluetooth backend which supports Windows, Mac, and Linux
+//! It uses btleplug as the Bluetooth backend which supports Windows, Mac, and Linux.
 //!
 //! ## Usage
 //!
-//! Example of how to use the library to keep track of heart rate from a Polar H10
+//! Example of how to use the library to keep track of heart rate from a Polar H10.
 //!
 //! ```rust,no_run
 //! use arctic::{async_trait, Error as ArcticError, EventHandler, NotifyStream, PolarSensor, HeartRate};
@@ -14,7 +14,7 @@
 //!
 //! #[async_trait]
 //! impl EventHandler for Handler {
-//!     // Handler for heart rate events
+//!     // Handler for heart rate events.
 //!     async fn heart_rate_update(&self, _ctx: &PolarSensor, heartrate: HeartRate) {
 //!         println!("Heart rate: {:?}", heartrate);
 //!     }
@@ -39,15 +39,15 @@
 //!         }
 //!     }
 //!
-//!     // Subscribe to heart rate events
+//!     // Subscribe to heart rate events.
 //!     if let Err(why) = polar.subscribe(NotifyStream::HeartRate).await {
 //!         println!("Could not subscribe to heart rate notifications: {:?}", why)
 //!     }
 //!
-//!     // Set the event handler to our struct defined above
+//!     // Set the event handler to our struct defined above.
 //!     polar.event_handler(Handler);
 //!
-//!     // Run the event loop until it ends
+//!     // Run the event loop until it ends.
 //!     let result = polar.event_loop().await;
 //!     println!("No more data: {:?}", result);
 //!     Ok(())
@@ -75,32 +75,32 @@ pub use control::{
 use polar_uuid::{NotifyUuid, StringUuid};
 pub use response::{Acc, Ecg, HeartRate, PmdData, PmdRead};
 
-/// Error type for general errors and Ble errors from btleplug
+/// Error type for general errors and Ble errors from btleplug.
 #[derive(Debug)]
 pub enum Error {
-    /// No Bluetooth adapter found when trying to scan
+    /// No Bluetooth adapter found when trying to scan.
     NoBleAdaptor,
-    /// Could not create control point link
+    /// Could not create control point link.
     NoControlPoint,
-    /// Could not find a device when trying to connect
+    /// Could not find a device when trying to connect.
     NoDevice,
-    /// Device is not connected, but function was called that requires it
+    /// Device is not connected, but function was called that requires it.
     NotConnected,
-    /// No measurement type selected
+    /// No measurement type selected.
     NoDataType,
-    /// Device is missing a characteristic that was used
+    /// Device is missing a characteristic that was used.
     CharacteristicNotFound,
-    /// Data packets received from device could not be parsed
+    /// Data packets received from device could not be parsed.
     InvalidData,
-    /// Not enough data was received
+    /// Not enough data was received.
     InvalidLength,
-    /// Command to write to PMD control point is Null
+    /// Command to write to PMD control point is Null.
     NullCommand,
-    /// Tried to create a struct using the wrong control point response
+    /// Tried to create a struct using the wrong control point response.
     WrongResponse,
-    /// Tried to set a setting using with a [`H10MeasurementType`] that doesn't support that feature
+    /// Tried to set a setting using with a [`H10MeasurementType`] that doesn't support that feature.
     WrongType,
-    /// An error occurred in the underlying BLE library
+    /// An error occurred in the underlying BLE library.
     BleError(btleplug::Error),
 }
 
@@ -126,12 +126,12 @@ impl fmt::Display for Error {
 
 impl std::error::Error for Error {}
 
-/// List of measurement types you can request
+/// List of measurement types you can request.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum H10MeasurementType {
-    /// Volts (V)
+    /// Volts (V).
     Ecg,
-    /// Force per unit mass (mG)
+    /// Force per unit mass (mG).
     Acc,
 }
 
@@ -163,25 +163,25 @@ impl H10MeasurementType {
     }
 }
 
-/// Struct that reads what features are available on your device
+/// Struct that reads what features are available on your device.
 #[derive(Debug)]
 pub struct SupportedFeatures {
-    /// Electrocardiogram
+    /// Electrocardiogram.
     pub ecg: bool,
-    /// Photoplethysmography
+    /// Photoplethysmography.
     pub ppg: bool,
-    /// Acceleration
+    /// Acceleration.
     pub acc: bool,
-    /// Peak to peak
+    /// Peak to peak.
     pub ppi: bool,
-    /// Gyroscope
+    /// Gyroscope.
     pub gyro: bool,
-    /// Magnetometer
+    /// Magnetometer.
     pub mag: bool,
 }
 
 impl SupportedFeatures {
-    /// Create [`SupportedFeatures`]
+    /// Create [`SupportedFeatures`].
     pub fn new(mes: u8) -> SupportedFeatures {
         SupportedFeatures {
             ecg: (mes & 0b00000001) != 0,
@@ -195,7 +195,7 @@ impl SupportedFeatures {
     }
 }
 
-/// Trait for handling events coming from a device
+/// Trait for handling events coming from a device.
 #[async_trait]
 pub trait EventHandler: Send + Sync {
     /// Dispatched when a battery update is received.
@@ -203,36 +203,36 @@ pub trait EventHandler: Send + Sync {
     /// Contains the current battery level.
     async fn battery_update(&self, _battery_level: u8) {}
 
-    /// Dispatched when a heart rate update is received
+    /// Dispatched when a heart rate update is received.
     ///
-    /// Contains information about the heart rate and R-R timing
+    /// Contains information about the heart rate and R-R timing.
     async fn heart_rate_update(&self, _ctx: &PolarSensor, _heartrate: HeartRate) {}
 
-    /// Dispatched when measurement data is received over the PMD data UUID
+    /// Dispatched when measurement data is received over the PMD data UUID.
     ///
-    /// Contains data in a [`PmdRead`]
+    /// Contains data in a [`PmdRead`].
     async fn measurement_update(&self, _ctx: &PolarSensor, _data: PmdRead) {}
 
-    /// Checked at start of each event loop
+    /// Checked at start of each event loop.
     ///
-    /// Returns `false` if the event loop should terminate and close up
+    /// Returns [`false`] if the event loop should terminate and close up.
     async fn should_continue(&self) -> bool {
         true
     }
 }
 
-/// Result simplification type
+/// Result simplification type.
 pub type PolarResult<T> = std::result::Result<T, Error>;
 
-/// A list of stream types that can be subscribed to
+/// A list of stream types that can be subscribed to.
 pub enum NotifyStream {
-    /// Receive battery updates
+    /// Receive battery updates.
     Battery,
-    /// Receive heart rate updates
+    /// Receive heart rate updates.
     HeartRate,
-    /// Receive updates from the control points, only for use within the library
+    /// Receive updates from the control points, only for use within the library.
     MeasurementCP,
-    /// Receive updates from the PMD data stream (acceleration or ECG)
+    /// Receive updates from the PMD data stream (acceleration or ECG).
     MeasurementData,
 }
 
@@ -246,7 +246,7 @@ impl From<NotifyStream> for Uuid {
 ///
 /// ## Example
 ///
-/// Order of operations for connecting and using a `PolarSensor`
+/// Order of operations for connecting and using a [`PolarSensor`].
 ///
 /// ```rust,no_run
 /// // Create the initial object. The new function takes a device ID which it
@@ -258,27 +258,27 @@ impl From<NotifyStream> for Uuid {
 /// # async fn main() {
 /// let mut polar = PolarSensor::new("7B45F72B".to_string()).await.unwrap();
 ///
-/// // Do the actual connection. This will find the device and start the Bluetooth connection
+/// // Do the actual connection. This will find the device and start the Bluetooth connection.
 /// polar.connect().await.unwrap();
 /// # }
-/// // Can now subscribe to events, set event handler, run the event loop, etc
+/// // Can now subscribe to events, set event handler, run the event loop, etc.
 /// ```
 pub struct PolarSensor {
-    /// The device id written on the device (e.g, "8C4CAD2D")
+    /// The device id written on the device (e.g, "8C4CAD2D").
     device_id: String,
-    /// BLE connection handlers
+    /// BLE connection handlers.
     ble_manager: Manager,
-    /// The connection to the device
+    /// The connection to the device.
     ble_device: Option<Peripheral>,
-    /// Handler for event callbacks
+    /// Handler for event callbacks.
     event_handler: Option<Arc<dyn EventHandler>>,
-    /// Control point accessory
+    /// Control point accessory.
     control_point: Option<ControlPoint>,
-    /// Current type of info gathered
+    /// Current type of info gathered.
     data_type: Option<Vec<H10MeasurementType>>,
-    /// Range of 2G, 4G or 8G (only for ACC)
+    /// Range of 2G, 4G or 8G (only for ACC).
     range: u8,
-    /// Sample rate in Hz
+    /// Sample rate in Hz.
     sample_rate: u8,
 }
 
@@ -287,7 +287,7 @@ impl PolarSensor {
     ///
     /// # Errors
     ///
-    /// Returns a [`Error::BleError`] if the Bluetooth manager could not be created
+    /// Returns a [`Error::BleError`] if the Bluetooth manager could not be created.
     pub async fn new(device_id: String) -> PolarResult<PolarSensor> {
         let ble_manager = Manager::new().await.map_err(Error::BleError)?;
 
@@ -312,11 +312,11 @@ impl PolarSensor {
     /// # Errors
     ///
     /// Returns a [`Error::BleError`] if:
-    /// - Unable to get Bluetooth adapters
-    /// - Unable to scan for devices
-    /// - Unable to discover services for a device
-    /// Also returns [`Error::NoBleAdaptor`] if there are no adapters available
-    /// Can also return [`Error::NotConnected`] if no device was found
+    /// - Unable to get Bluetooth adapters.
+    /// - Unable to scan for devices.
+    /// - Unable to discover services for a device.
+    /// Also returns [`Error::NoBleAdaptor`] if there are no adapters available.
+    /// Can also return [`Error::NotConnected`] if no device was found.
     pub async fn connect(&mut self) -> PolarResult<()> {
         // get the first Bluetooth adapter
         let adapters_result = self.ble_manager.adapters().await.map_err(Error::BleError);
@@ -355,9 +355,9 @@ impl PolarSensor {
     /// # Errors
     ///
     /// Will return:
-    /// - [`Error::NotConnected`] if the device is not currently connected
-    /// - [`Error::CharacteristicNotFound`] if a given notify type is not found on the device
-    /// - [`Error::BleError`] if there is an error subscribing to the event
+    /// - [`Error::NotConnected`] if the device is not currently connected.
+    /// - [`Error::CharacteristicNotFound`] if a given notify type is not found on the device.
+    /// - [`Error::BleError`] if there is an error subscribing to the event.
     pub async fn subscribe(&self, stream: NotifyStream) -> PolarResult<()> {
         let device = self.device().await?;
 
@@ -377,9 +377,9 @@ impl PolarSensor {
     /// # Errors
     ///
     /// Will return:
-    /// - [`Error::NotConnected`] if the device isn't connected
-    /// - [`Error::CharacteristicNotFound`] if the specified notify type isn't found on the device
-    /// - [`Error::BleError`] if there is an error subscribing to the event from within BLE
+    /// - [`Error::NotConnected`] if the device isn't connected.
+    /// - [`Error::CharacteristicNotFound`] if the specified notify type isn't found on the device.
+    /// - [`Error::BleError`] if there is an error subscribing to the event from within BLE.
     pub async fn unsubscribe(&self, stream: NotifyStream) -> PolarResult<()> {
         let device = self.device().await?;
 
@@ -395,7 +395,7 @@ impl PolarSensor {
         Err(Error::NotConnected)
     }
 
-    /// Returns whether the device is currently connected or not
+    /// Returns whether the device is currently connected or not.
     pub async fn is_connected(&self) -> bool {
         if let Some(device) = &self.ble_device {
             if let Ok(value) = device.is_connected().await {
@@ -406,7 +406,7 @@ impl PolarSensor {
         false
     }
 
-    /// Returns the RSSI of your device and the H10, or None if you have no device
+    /// Returns the RSSI of your device and the H10, or None if you have no device.
     pub async fn rssi(&self) -> Option<i16> {
         let device = self.device().await.ok()?;
 
@@ -456,7 +456,7 @@ impl PolarSensor {
         );
     }
 
-    /// Prints the body location of your device
+    /// Prints the body location of your device.
     pub async fn body_location(&self) {
         println!(
             "Body Location: {:?}",
@@ -464,11 +464,11 @@ impl PolarSensor {
         );
     }
 
-    /// Start measurement stream for one [`H10MeasurementType`]
+    /// Start measurement stream for one [`H10MeasurementType`].
     ///
     /// # Errors
     ///
-    /// - [`Error::NoControlPoint`] if you haven't set a controller
+    /// - [`Error::NoControlPoint`] if you haven't set a controller.
     async fn start_measurement(&self, ty: H10MeasurementType) -> PolarResult<()> {
         let controller = self.controller().await?;
         let mut command = vec![0x02u8, ty.as_u8()];
@@ -514,12 +514,12 @@ impl PolarSensor {
         Ok(())
     }
 
-    /// End measurement stream for `self.data_type`
+    /// End measurement stream for [`H10MeasurementType`]
     ///
     /// # Errors
     ///
-    /// - [`Error::NoControlPoint`] if you haven't set a controller
-    /// - [`Error::NoDataType`] if you haven't set a data type
+    /// - [`Error::NoControlPoint`] if you haven't set a controller.
+    /// - [`Error::NoDataType`] if you haven't set a data type.
     async fn stop_measurement(&self, data_type: H10MeasurementType) -> PolarResult<()> {
         let controller = self.controller().await?;
         controller
@@ -527,7 +527,7 @@ impl PolarSensor {
             .await
     }
 
-    /// Gets the measurement settings of your H10
+    /// Gets the measurement settings of your H10.
     pub async fn settings(&self) -> PolarResult<Vec<StreamSettings>> {
         let mut out: Vec<StreamSettings> = vec![];
 
@@ -553,7 +553,7 @@ impl PolarSensor {
             .await
     }
 
-    /// Request the SDK features from your H10
+    /// Request the SDK features from your H10.
     pub async fn features(&self) -> PolarResult<SupportedFeatures> {
         if let Ok(controller) = self.controller().await {
             if let Ok(device) = self.device().await {
@@ -572,19 +572,19 @@ impl PolarSensor {
         Err(Error::NoControlPoint)
     }
 
-    /// Start measurement while event loop is running
+    /// Start measurement while event loop is running.
     pub async fn start(&self, ty: H10MeasurementType) -> PolarResult<ControlResponse> {
         self.get_pmd_response(ControlPointCommand::RequestMeasurementStart, ty)
             .await
     }
 
-    /// Stop measurement while event loop is running
+    /// Stop measurement while event loop is running.
     pub async fn stop(&self, ty: H10MeasurementType) -> PolarResult<ControlResponse> {
         self.get_pmd_response(ControlPointCommand::StopMeasurement, ty)
             .await
     }
 
-    /// Adds this data type to read from the your H10 (if not already added)
+    /// Adds this data type to read from the your H10 (if not already added).
     pub fn data_type_push(&mut self, data_type: H10MeasurementType) {
         match &mut self.data_type {
             Some(types) => {
@@ -598,7 +598,7 @@ impl PolarSensor {
         };
     }
 
-    /// Removes a data type
+    /// Removes a data type.
     pub fn data_type_pop(&mut self, data_type: H10MeasurementType) {
         if let Some(data) = &mut self.data_type {
             data.retain(|x| *x != data_type);
@@ -608,12 +608,12 @@ impl PolarSensor {
         }
     }
 
-    /// Get data types
+    /// Get data types.
     pub fn data_type(&self) -> &Option<Vec<H10MeasurementType>> {
         &self.data_type
     }
 
-    /// Set data range for acceleration data
+    /// Set data range for acceleration data.
     pub fn range(&mut self, range: u8) -> PolarResult<()> {
         if range == 2 || range == 4 || range == 8 {
             if let Some(ty) = &self.data_type {
@@ -631,7 +631,7 @@ impl PolarSensor {
         Err(Error::InvalidData)
     }
 
-    /// Set sample rate
+    /// Set sample rate.
     pub fn sample_rate(&mut self, rate: u8) -> PolarResult<()> {
         if rate == 25 || rate == 50 || rate == 100 || rate == 200 {
             if let Some(ty) = &self.data_type {
@@ -805,7 +805,7 @@ impl PolarSensor {
     }
 }
 
-/// Private helper to find characteristics from a [`Uuid`]
+/// Private helper to find characteristics from a [`Uuid`].
 async fn find_characteristic(device: &Peripheral, uuid: Uuid) -> PolarResult<Characteristic> {
     device
         .characteristics()

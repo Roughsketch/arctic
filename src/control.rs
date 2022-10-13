@@ -9,21 +9,21 @@ use btleplug::api::{Characteristic, Peripheral as _, WriteType};
 use btleplug::platform::Peripheral;
 use uuid::Uuid;
 
-/// Polar Measurement Data Control Point (Read | Write | Indicate)
+/// Polar Measurement Data Control Point (Read | Write | Indicate).
 const PMD_CP_UUID: Uuid = Uuid::from_u128(0xfb005c81_02e7_f387_1cad_8acd2d8df0c8);
-/// Polar Measurement Data... Data (Notify)
+/// Polar Measurement Data... Data (Notify).
 const PMD_DATA_UUID: Uuid = Uuid::from_u128(0xfb005c82_02e7_f387_1cad_8acd2d8df0c8);
 
-/// Command options to write to the control point
+/// Command options to write to the control point.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ControlPointCommand {
-    /// Do nothing
+    /// Do nothing.
     Null = 0,
-    /// Get measurement settings for your data type
+    /// Get measurement settings for your data type.
     GetMeasurementSettings,
-    /// Start measurement for all data types
+    /// Start measurement for all data types.
     RequestMeasurementStart,
-    /// Stop all measurements in `PolarSensor.data_type`
+    /// Stop all measurements in `PolarSensor.data_type`.
     StopMeasurement,
 }
 
@@ -44,36 +44,36 @@ impl TryFrom<u8> for ControlPointCommand {
     }
 }
 
-/// Response code returned after a write to PMD control point
+/// Response code returned after a write to PMD control point.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ControlPointResponseCode {
-    /// Command was successful
+    /// Command was successful.
     Success = 0,
-    /// Control point command is not supported by device
+    /// Control point command is not supported by device.
     InvalidOpCode,
-    /// Device does not know the specified measurement type
+    /// Device does not know the specified measurement type.
     InvalidMeasurementType,
-    /// This measurement is not supported by device
+    /// This measurement is not supported by device.
     NotSupported,
-    /// Given length does not match the received data
+    /// Given length does not match the received data.
     InvalidLength,
-    /// Contains parameters that prevent successful handling of request
+    /// Contains parameters that prevent successful handling of request.
     InvalidParameter,
-    /// Device is already in the requested state
+    /// Device is already in the requested state.
     AlreadyInState,
-    /// Requested resolution is not supported by device
+    /// Requested resolution is not supported by device.
     InvalidResolution,
-    /// Requested sample rate is not supported by device
+    /// Requested sample rate is not supported by device.
     InvalidSampleRate,
-    /// Requested range is not supported
+    /// Requested range is not supported.
     InvalidRange,
-    /// Connection MTU does not match device required MTU
+    /// Connection MTU does not match device required MTU.
     InvalidMTU,
-    /// Request contains invalid number of channels
+    /// Request contains invalid number of channels.
     InvalidNumberOfChannels,
-    /// Device is in invalid state
+    /// Device is in invalid state.
     InvalidState,
-    /// Device is in charger and does not support requests
+    /// Device is in charger and does not support requests.
     DeviceInCharger,
 }
 
@@ -180,7 +180,7 @@ enum PmdByteType {
     Data,
 }
 
-/// Struct to store the settings for a specific stream on your device
+/// Struct to store the settings for a specific stream on your device.
 #[derive(Debug, PartialEq, Eq)]
 pub struct StreamSettings {
     ty: H10MeasurementType,
@@ -190,7 +190,7 @@ pub struct StreamSettings {
 }
 
 impl StreamSettings {
-    /// Create new stream settings
+    /// Create new stream settings.
     pub fn new(resp: &ControlResponse) -> PolarResult<StreamSettings> {
         if *resp.opcode() != ControlPointCommand::GetMeasurementSettings {
             return Err(Error::WrongResponse);
@@ -254,23 +254,23 @@ impl StreamSettings {
         })
     }
 
-    /// Getter for the resolution (in bits)
+    /// Getter for the resolution (in bits).
     pub fn resolution(&self) -> u8 {
         self.resolution
     }
 
-    /// Getter for range (ACC only) (in G)
+    /// Getter for range (ACC only) (in G).
     pub fn range(&self) -> &Option<Vec<u8>> {
         &self.range
     }
 
-    /// Getter for sample rates (in Hz)
+    /// Getter for sample rates (in Hz).
     pub fn sample_rate(&self) -> &Vec<u8> {
         &self.sample_rate
     }
 }
 
-/// Store data returned from the device after a write to the control point
+/// Store data returned from the device after a write to the control point.
 #[derive(Debug)]
 pub struct ControlResponse {
     op_code: ControlPointCommand,
@@ -280,7 +280,7 @@ pub struct ControlResponse {
 }
 
 impl ControlResponse {
-    /// Create new [`ControlResponse`]
+    /// Create new [`ControlResponse`].
     pub async fn new(data: Vec<u8>) -> PolarResult<ControlResponse> {
         // We need at least 4 bytes for a complete packet
         if data.len() < 4 {
@@ -308,28 +308,28 @@ impl ControlResponse {
         })
     }
 
-    /// Return extra parameters of this response
+    /// Return extra parameters of this response.
     pub fn parameters(&self) -> &Vec<u8> {
         &self.parameters
     }
 
-    /// Return op code of this response
+    /// Return op code of this response.
     pub fn opcode(&self) -> &ControlPointCommand {
         &self.op_code
     }
 
-    /// Get measurement type
+    /// Get measurement type.
     pub fn data_type(&self) -> &H10MeasurementType {
         &self.measurement_type
     }
 
-    /// Get response status
+    /// Get response status.
     pub fn status(&self) -> &ControlPointResponseCode {
         &self.status
     }
 }
 
-/// Struct that has access to the PMD control point point and PMD data
+/// Struct that has access to the PMD control point point and PMD data.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ControlPoint {
     control_point: Characteristic,
@@ -337,7 +337,7 @@ pub struct ControlPoint {
 }
 
 impl ControlPoint {
-    /// Create new [`ControlPoint`]
+    /// Create new [`ControlPoint`].
     pub async fn new(device: &Peripheral) -> PolarResult<ControlPoint> {
         let control_point = find_characteristic(device, PMD_CP_UUID).await?;
         let measurement_data = find_characteristic(device, PMD_DATA_UUID).await?;
@@ -348,7 +348,7 @@ impl ControlPoint {
         })
     }
 
-    /// Send command to [`ControlPoint`]
+    /// Send command to [`ControlPoint`].
     pub async fn send_command(&self, device: &Peripheral, data: Vec<u8>) -> PolarResult<()> {
         self.write(device, data).await?;
 
@@ -362,7 +362,7 @@ impl ControlPoint {
             .map_err(Error::BleError)
     }
 
-    /// Read data from [`ControlPoint`] (for reading the features of a device)
+    /// Read data from [`ControlPoint`] (for reading the features of a device).
     pub async fn read(&self, device: &Peripheral) -> PolarResult<Vec<u8>> {
         device
             .read(&self.control_point)

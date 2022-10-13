@@ -40,7 +40,7 @@ fn bytes_to_data(data: &[u8], len: usize) -> i32 {
     }
 }
 
-/// Struct for receiving measurement type data on PMD data
+/// Struct for receiving measurement type data on PMD data.
 #[derive(Debug)]
 pub struct PmdRead {
     data_type: H10MeasurementType,
@@ -49,7 +49,7 @@ pub struct PmdRead {
 }
 
 impl PmdRead {
-    /// Create new [`PmdRead`]
+    /// Create new [`PmdRead`].
     pub fn new(data_stream: Vec<u8>) -> PolarResult<PmdRead> {
         let data_type = H10MeasurementType::try_from(data_stream[0]);
         if let Err(_e) = data_type {
@@ -87,39 +87,39 @@ impl PmdRead {
         })
     }
 
-    /// Return data type of this data
+    /// Return data type of this data.
     pub fn data_type(&self) -> &H10MeasurementType {
         &self.data_type
     }
 
-    /// Return time stamp of this data
+    /// Return time stamp of this data.
     pub fn time_stamp(&self) -> u64 {
         self.time_stamp
     }
 
-    /// Consumes self and returns all data
+    /// Consumes self and returns all data.
     pub fn data(self) -> Vec<PmdData> {
         self.data
     }
 }
 
-/// Enum to store which kind of data was received
+/// Enum to store which kind of data was received.
 #[derive(Debug)]
 pub enum PmdData {
-    /// Electrocardiogram
+    /// Electrocardiogram.
     Ecg(Ecg),
-    /// Acceleration
+    /// Acceleration.
     Acc(Acc),
 }
 
-/// Struct to store ECG from the PMD data stream
+/// Struct to store ECG from the PMD data stream.
 #[derive(Debug)]
 pub struct Ecg {
     val: i32,
 }
 
 impl Ecg {
-    /// Create new instance of [`Ecg`]
+    /// Create new instance of [`Ecg`].
     fn new(data: &Vec<u8>) -> PolarResult<Ecg> {
         if data.len() < 3 {
             eprintln!("ECG expects 3 bytes of data, got {}.", data.len());
@@ -133,13 +133,13 @@ impl Ecg {
         Ok(Ecg { val })
     }
 
-    /// Return ECG value (in µV)
+    /// Return ECG value (in µV).
     pub fn val(&self) -> &i32 {
         &self.val
     }
 }
 
-/// Struct to store acceleration from the PMD data stream
+/// Struct to store acceleration from the PMD data stream.
 #[derive(Debug)]
 pub struct Acc {
     x: i32,
@@ -148,7 +148,7 @@ pub struct Acc {
 }
 
 impl Acc {
-    /// Create new instance of [`Acc`]
+    /// Create new instance of [`Acc`].
     fn new(data: &Vec<u8>) -> PolarResult<Acc> {
         if data.len() < 2 {
             eprintln!("Acceleration expects 2 bytes of data, got {}", data.len());
@@ -166,13 +166,13 @@ impl Acc {
         })
     }
 
-    /// Return data as a tuple (in mG)
+    /// Return data as a tuple (in mG).
     pub fn data(&self) -> (i32, i32, i32) {
         (self.x, self.y, self.z)
     }
 }
 
-/// Structure to contain HR data and RR interval
+/// Structure to contain HR data and RR interval.
 #[derive(Debug)]
 pub struct HeartRate {
     bpm: u8,
@@ -180,7 +180,7 @@ pub struct HeartRate {
 }
 
 impl HeartRate {
-    /// Create new instance of [`HeartRate`]
+    /// Create new instance of [`HeartRate`].
     pub fn new(data: Vec<u8>) -> PolarResult<HeartRate> {
         if data.len() < 2 {
             eprintln!(
@@ -212,12 +212,12 @@ impl HeartRate {
         Ok(HeartRate { bpm, rr })
     }
 
-    /// Get BPM of heart rate measurement
+    /// Get BPM of heart rate measurement.
     pub fn bpm(&self) -> &u8 {
         &self.bpm
     }
 
-    /// Get RR interval as a tuple
+    /// Get RR interval as a tuple.
     pub fn rr(&self) -> &Option<Vec<u16>> {
         &self.rr
     }

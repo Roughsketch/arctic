@@ -5,9 +5,9 @@
 use crate::NotifyStream;
 use uuid::Uuid;
 
-/// Battery notify stream
+/// Battery notify stream.
 const BATTERY_LEVEL_UUID: Uuid = Uuid::from_u128(0x00002a19_0000_1000_8000_00805f9b34fb);
-/// Heart rate notify stream
+/// Heart rate notify stream.
 const HEART_RATE_SERVICE_UUID: Uuid = Uuid::from_u128(0x00002a37_0000_1000_8000_00805f9b34fb);
 const BODY_LOCATION_UUID: Uuid = Uuid::from_u128(0x00002a38_0000_1000_8000_00805f9b34fb);
 
@@ -22,7 +22,7 @@ const SOFTWARE_REVISION_STRING_UUID: Uuid = Uuid::from_u128(0x00002a28_0000_1000
 const SERIAL_NUMBER_STRING_UUID: Uuid = Uuid::from_u128(0x00002a25_0000_1000_8000_00805f9b34fb);
 const SYSTEM_ID_UUID: Uuid = Uuid::from_u128(0x00002a23_0000_1000_8000_00805f9b34fb);
 
-/// Which UUID to send BLE messages to
+/// Which UUID to send BLE messages to.
 pub enum NotifyUuid {
     BatteryLevel,
     HeartMeasurement,
