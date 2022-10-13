@@ -50,7 +50,7 @@ pub struct PmdRead {
 
 impl PmdRead {
     /// Create new [`PmdRead`].
-    pub fn new(data_stream: Vec<u8>) -> PolarResult<PmdRead> {
+    pub fn new(data_stream: Vec<u8>) -> PolarResult<Self> {
         let data_type = H10MeasurementType::try_from(data_stream[0]);
         if let Err(_e) = data_type {
             return Err(Error::InvalidData);
@@ -80,7 +80,7 @@ impl PmdRead {
             current_pos += frame_length;
         }
 
-        Ok(PmdRead {
+        Ok(Self {
             data_type,
             time_stamp,
             data,
@@ -88,12 +88,12 @@ impl PmdRead {
     }
 
     /// Return data type of this data.
-    pub fn data_type(&self) -> &H10MeasurementType {
+    pub const fn data_type(&self) -> &H10MeasurementType {
         &self.data_type
     }
 
     /// Return time stamp of this data.
-    pub fn time_stamp(&self) -> u64 {
+    pub const fn time_stamp(&self) -> u64 {
         self.time_stamp
     }
 
@@ -120,7 +120,7 @@ pub struct Ecg {
 
 impl Ecg {
     /// Create new instance of [`Ecg`].
-    fn new(data: &Vec<u8>) -> PolarResult<Ecg> {
+    fn new(data: &Vec<u8>) -> PolarResult<Self> {
         if data.len() < 3 {
             eprintln!("ECG expects 3 bytes of data, got {}.", data.len());
             return Err(Error::InvalidLength);
@@ -130,11 +130,11 @@ impl Ecg {
 
         let val = bytes_to_data(&data[..3], 3);
 
-        Ok(Ecg { val })
+        Ok(Self { val })
     }
 
     /// Return ECG value (in µV).
-    pub fn val(&self) -> &i32 {
+    pub const fn val(&self) -> &i32 {
         &self.val
     }
 }
@@ -149,14 +149,14 @@ pub struct Acc {
 
 impl Acc {
     /// Create new instance of [`Acc`].
-    fn new(data: &Vec<u8>) -> PolarResult<Acc> {
+    fn new(data: &Vec<u8>) -> PolarResult<Self> {
         if data.len() < 2 {
             eprintln!("Acceleration expects 2 bytes of data, got {}", data.len());
             return Err(Error::InvalidLength);
         }
         let frame_size = 6;
 
-        Ok(Acc {
+        Ok(Self {
             x: bytes_to_data(&data[..frame_size / 3], frame_size / 3),
             y: bytes_to_data(&data[frame_size / 3..(frame_size / 3) * 2], frame_size / 3),
             z: bytes_to_data(
@@ -167,7 +167,7 @@ impl Acc {
     }
 
     /// Return data as a tuple (in mG).
-    pub fn data(&self) -> (i32, i32, i32) {
+    pub const fn data(&self) -> (i32, i32, i32) {
         (self.x, self.y, self.z)
     }
 }
@@ -181,7 +181,7 @@ pub struct HeartRate {
 
 impl HeartRate {
     /// Create new instance of [`HeartRate`].
-    pub fn new(data: Vec<u8>) -> PolarResult<HeartRate> {
+    pub fn new(data: Vec<u8>) -> PolarResult<Self> {
         if data.len() < 2 {
             eprintln!(
                 "Heart rate expects atleast 2 bytes of data, got {}",
@@ -190,7 +190,7 @@ impl HeartRate {
             return Err(Error::InvalidLength);
         }
         let flags = data[0];
-        let samples = if flags & 0b00010000 == 16 {
+        let samples = if flags & 0b0001_0000 == 16 {
             (data.len() - 2) / 2
         } else {
             0
@@ -209,16 +209,16 @@ impl HeartRate {
             None
         };
 
-        Ok(HeartRate { bpm, rr })
+        Ok(Self { bpm, rr })
     }
 
     /// Get BPM of heart rate measurement.
-    pub fn bpm(&self) -> &u8 {
+    pub const fn bpm(&self) -> &u8 {
         &self.bpm
     }
 
     /// Get RR interval as a tuple.
-    pub fn rr(&self) -> &Option<Vec<u16>> {
+    pub const fn rr(&self) -> &Option<Vec<u16>> {
         &self.rr
     }
 }
@@ -232,7 +232,7 @@ mod test {
     fn pmd_read_acc_new() {
         let response = PmdRead::new(vec![
             0x02, 0xea, 0x54, 0xa2, 0x42, 0x8b, 0x45, 0x52, 0x08, 0x01, 0x45, 0xff, 0xe4, 0xff,
-            0xb5, 0x03, 0x45, 0xff, 0xe4, 0xff, 0xb8, 03,
+            0xb5, 0x03, 0x45, 0xff, 0xe4, 0xff, 0xb8, 0x03,
         ])
         .unwrap();
 

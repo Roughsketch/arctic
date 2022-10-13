@@ -30,12 +30,12 @@ pub enum ControlPointCommand {
 impl TryFrom<u8> for ControlPointCommand {
     type Error = ();
 
-    fn try_from(val: u8) -> Result<ControlPointCommand, ()> {
+    fn try_from(val: u8) -> Result<Self, ()> {
         match val {
-            0 => Ok(ControlPointCommand::Null),
-            1 => Ok(ControlPointCommand::GetMeasurementSettings),
-            2 => Ok(ControlPointCommand::RequestMeasurementStart),
-            3 => Ok(ControlPointCommand::StopMeasurement),
+            0 => Ok(Self::Null),
+            1 => Ok(Self::GetMeasurementSettings),
+            2 => Ok(Self::RequestMeasurementStart),
+            3 => Ok(Self::StopMeasurement),
             _ => {
                 println!("Invalid ControlPointCommand {}", val);
                 Err(())
@@ -80,22 +80,22 @@ pub enum ControlPointResponseCode {
 impl TryFrom<u8> for ControlPointResponseCode {
     type Error = ();
 
-    fn try_from(val: u8) -> Result<ControlPointResponseCode, ()> {
+    fn try_from(val: u8) -> Result<Self, ()> {
         match val {
-            0 => Ok(ControlPointResponseCode::Success),
-            1 => Ok(ControlPointResponseCode::InvalidOpCode),
-            2 => Ok(ControlPointResponseCode::InvalidMeasurementType),
-            3 => Ok(ControlPointResponseCode::NotSupported),
-            4 => Ok(ControlPointResponseCode::InvalidLength),
-            5 => Ok(ControlPointResponseCode::InvalidParameter),
-            6 => Ok(ControlPointResponseCode::AlreadyInState),
-            7 => Ok(ControlPointResponseCode::InvalidResolution),
-            8 => Ok(ControlPointResponseCode::InvalidSampleRate),
-            9 => Ok(ControlPointResponseCode::InvalidRange),
-            10 => Ok(ControlPointResponseCode::InvalidMTU),
-            11 => Ok(ControlPointResponseCode::InvalidNumberOfChannels),
-            12 => Ok(ControlPointResponseCode::InvalidState),
-            13 => Ok(ControlPointResponseCode::DeviceInCharger),
+            0 => Ok(Self::Success),
+            1 => Ok(Self::InvalidOpCode),
+            2 => Ok(Self::InvalidMeasurementType),
+            3 => Ok(Self::NotSupported),
+            4 => Ok(Self::InvalidLength),
+            5 => Ok(Self::InvalidParameter),
+            6 => Ok(Self::AlreadyInState),
+            7 => Ok(Self::InvalidResolution),
+            8 => Ok(Self::InvalidSampleRate),
+            9 => Ok(Self::InvalidRange),
+            10 => Ok(Self::InvalidMTU),
+            11 => Ok(Self::InvalidNumberOfChannels),
+            12 => Ok(Self::InvalidState),
+            13 => Ok(Self::DeviceInCharger),
             _ => {
                 println!("Invalid ControlPointResponseCode {}", val);
                 Err(())
@@ -129,26 +129,26 @@ enum ResponseCode {
 impl TryFrom<u8> for ResponseCode {
     type Error = ();
 
-    fn try_from(val: u8) -> Result<ResponseCode, ()> {
+    fn try_from(val: u8) -> Result<Self, ()> {
         match val {
-            0 => Ok(ResponseCode::Success),
-            1 => Ok(ResponseCode::InvalidHandle),
-            2 => Ok(ResponseCode::ReadNotPermitted),
-            3 => Ok(ResponseCode::WriteNotPermitted),
-            4 => Ok(ResponseCode::InvalidPdu),
-            5 => Ok(ResponseCode::InsufficientAuthentication),
-            6 => Ok(ResponseCode::RequestNotSupported),
-            7 => Ok(ResponseCode::InvalidOffset),
-            8 => Ok(ResponseCode::InsufficientAuthorization),
-            9 => Ok(ResponseCode::PrepareQueueFull),
-            10 => Ok(ResponseCode::AttributeNotFound),
-            11 => Ok(ResponseCode::AttributeNotLong),
-            12 => Ok(ResponseCode::InsufficientEncryptionKeySize),
-            13 => Ok(ResponseCode::InsufficientAttributeValueLength),
-            14 => Ok(ResponseCode::UnlikelyError),
-            15 => Ok(ResponseCode::InsufficientEncryption),
-            16 => Ok(ResponseCode::UnsupportedGroupType),
-            17 => Ok(ResponseCode::InsufficientResources),
+            0 => Ok(Self::Success),
+            1 => Ok(Self::InvalidHandle),
+            2 => Ok(Self::ReadNotPermitted),
+            3 => Ok(Self::WriteNotPermitted),
+            4 => Ok(Self::InvalidPdu),
+            5 => Ok(Self::InsufficientAuthentication),
+            6 => Ok(Self::RequestNotSupported),
+            7 => Ok(Self::InvalidOffset),
+            8 => Ok(Self::InsufficientAuthorization),
+            9 => Ok(Self::PrepareQueueFull),
+            10 => Ok(Self::AttributeNotFound),
+            11 => Ok(Self::AttributeNotLong),
+            12 => Ok(Self::InsufficientEncryptionKeySize),
+            13 => Ok(Self::InsufficientAttributeValueLength),
+            14 => Ok(Self::UnlikelyError),
+            15 => Ok(Self::InsufficientEncryption),
+            16 => Ok(Self::UnsupportedGroupType),
+            17 => Ok(Self::InsufficientResources),
             _ => {
                 println!("Invalid ResponseCode {}", val);
                 Err(())
@@ -165,11 +165,11 @@ enum SettingType {
 }
 
 impl SettingType {
-    fn from(byte: u8) -> SettingType {
+    const fn from(byte: u8) -> Self {
         match byte {
-            0x00 => SettingType::SampleRate,
-            0x01 => SettingType::Resolution,
-            _ => SettingType::Range,
+            0x00 => Self::SampleRate,
+            0x01 => Self::Resolution,
+            _ => Self::Range,
         }
     }
 }
@@ -191,7 +191,7 @@ pub struct StreamSettings {
 
 impl StreamSettings {
     /// Create new stream settings.
-    pub fn new(resp: &ControlResponse) -> PolarResult<StreamSettings> {
+    pub fn new(resp: &ControlResponse) -> PolarResult<Self> {
         if *resp.opcode() != ControlPointCommand::GetMeasurementSettings {
             return Err(Error::WrongResponse);
         }
@@ -246,7 +246,7 @@ impl StreamSettings {
             None
         };
 
-        Ok(StreamSettings {
+        Ok(Self {
             ty: *resp.data_type(),
             resolution,
             range,
@@ -255,17 +255,17 @@ impl StreamSettings {
     }
 
     /// Getter for the resolution (in bits).
-    pub fn resolution(&self) -> u8 {
+    pub const fn resolution(&self) -> u8 {
         self.resolution
     }
 
     /// Getter for range (ACC only) (in G).
-    pub fn range(&self) -> &Option<Vec<u8>> {
+    pub const fn range(&self) -> &Option<Vec<u8>> {
         &self.range
     }
 
     /// Getter for sample rates (in Hz).
-    pub fn sample_rate(&self) -> &Vec<u8> {
+    pub const fn sample_rate(&self) -> &Vec<u8> {
         &self.sample_rate
     }
 }
@@ -281,7 +281,7 @@ pub struct ControlResponse {
 
 impl ControlResponse {
     /// Create new [`ControlResponse`].
-    pub async fn new(data: Vec<u8>) -> PolarResult<ControlResponse> {
+    pub async fn new(data: Vec<u8>) -> PolarResult<Self> {
         // We need at least 4 bytes for a complete packet
         if data.len() < 4 {
             return Err(Error::InvalidData);
@@ -294,13 +294,13 @@ impl ControlResponse {
         let measurement_type =
             H10MeasurementType::try_from(data[2]).map_err(|_| Error::InvalidData)?;
         let status = ControlPointResponseCode::try_from(data[3]).map_err(|_| Error::InvalidData)?;
-        let mut parameters = Vec::new();
+        let parameters = if data.len() > 5 {
+            data[5..].to_vec()
+        } else {
+            Vec::new()
+        };
 
-        if data.len() > 5 {
-            parameters = data[5..].to_vec();
-        }
-
-        Ok(ControlResponse {
+        Ok(Self {
             op_code,
             measurement_type,
             status,
@@ -309,22 +309,22 @@ impl ControlResponse {
     }
 
     /// Return extra parameters of this response.
-    pub fn parameters(&self) -> &Vec<u8> {
+    pub const fn parameters(&self) -> &Vec<u8> {
         &self.parameters
     }
 
     /// Return op code of this response.
-    pub fn opcode(&self) -> &ControlPointCommand {
+    pub const fn opcode(&self) -> &ControlPointCommand {
         &self.op_code
     }
 
     /// Get measurement type.
-    pub fn data_type(&self) -> &H10MeasurementType {
+    pub const fn data_type(&self) -> &H10MeasurementType {
         &self.measurement_type
     }
 
     /// Get response status.
-    pub fn status(&self) -> &ControlPointResponseCode {
+    pub const fn status(&self) -> &ControlPointResponseCode {
         &self.status
     }
 }
@@ -338,11 +338,11 @@ pub struct ControlPoint {
 
 impl ControlPoint {
     /// Create new [`ControlPoint`].
-    pub async fn new(device: &Peripheral) -> PolarResult<ControlPoint> {
+    pub async fn new(device: &Peripheral) -> PolarResult<Self> {
         let control_point = find_characteristic(device, PMD_CP_UUID).await?;
         let measurement_data = find_characteristic(device, PMD_DATA_UUID).await?;
 
-        Ok(ControlPoint {
+        Ok(Self {
             control_point,
             measurement_data,
         })

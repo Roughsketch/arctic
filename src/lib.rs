@@ -107,18 +107,18 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let msg = match self {
-            Error::NoBleAdaptor => "No BLE adaptor".to_string(),
-            Error::NoControlPoint => "No control point".to_string(),
-            Error::NoDevice => "No device".to_string(),
-            Error::NotConnected => "Not connected".to_string(),
-            Error::NoDataType => "No data type".to_string(),
-            Error::CharacteristicNotFound => "Characteristic not found".to_string(),
-            Error::InvalidData => "Invalid data".to_string(),
-            Error::InvalidLength => "Invalid length".to_string(),
-            Error::NullCommand => "Null command".to_string(),
-            Error::WrongResponse => "Wrong response".to_string(),
-            Error::WrongType => "Wrong type".to_string(),
-            Error::BleError(er) => format!("BLE error: {:?}", er),
+            Self::NoBleAdaptor => "No BLE adaptor".to_string(),
+            Self::NoControlPoint => "No control point".to_string(),
+            Self::NoDevice => "No device".to_string(),
+            Self::NotConnected => "Not connected".to_string(),
+            Self::NoDataType => "No data type".to_string(),
+            Self::CharacteristicNotFound => "Characteristic not found".to_string(),
+            Self::InvalidData => "Invalid data".to_string(),
+            Self::InvalidLength => "Invalid length".to_string(),
+            Self::NullCommand => "Null command".to_string(),
+            Self::WrongResponse => "Wrong response".to_string(),
+            Self::WrongType => "Wrong type".to_string(),
+            Self::BleError(er) => format!("BLE error: {:?}", er),
         };
         write!(f, "Arctic Error: {}", msg)
     }
@@ -138,27 +138,27 @@ pub enum H10MeasurementType {
 impl TryFrom<u8> for H10MeasurementType {
     type Error = ();
 
-    fn try_from(data: u8) -> Result<H10MeasurementType, ()> {
+    fn try_from(data: u8) -> Result<Self, ()> {
         match data {
-            0x0 => Ok(H10MeasurementType::Ecg),
-            0x2 => Ok(H10MeasurementType::Acc),
+            0x0 => Ok(Self::Ecg),
+            0x2 => Ok(Self::Acc),
             _ => Err(()),
         }
     }
 }
 
 impl H10MeasurementType {
-    fn as_u8(&self) -> u8 {
+    const fn as_u8(&self) -> u8 {
         match *self {
-            H10MeasurementType::Ecg => 0x0,
-            H10MeasurementType::Acc => 0x2,
+            Self::Ecg => 0x0,
+            Self::Acc => 0x2,
         }
     }
 
-    fn as_bytes(&self) -> u8 {
+    const fn as_bytes(&self) -> u8 {
         match *self {
-            H10MeasurementType::Ecg => 3,
-            H10MeasurementType::Acc => 6,
+            Self::Ecg => 3,
+            Self::Acc => 6,
         }
     }
 }
@@ -182,15 +182,15 @@ pub struct SupportedFeatures {
 
 impl SupportedFeatures {
     /// Create [`SupportedFeatures`].
-    pub fn new(mes: u8) -> SupportedFeatures {
-        SupportedFeatures {
-            ecg: (mes & 0b00000001) != 0,
-            ppg: (mes & 0b00000010) != 0,
-            acc: (mes & 0b00000100) != 0,
-            ppi: (mes & 0b00001000) != 0,
-            // rfu       0b00010000
-            gyro: (mes & 0b00100000) != 0,
-            mag: (mes & 0b01000000) != 0,
+    pub const fn new(mes: u8) -> Self {
+        Self {
+            ecg: (mes & 0b0000_0001) != 0,
+            ppg: (mes & 0b0000_0010) != 0,
+            acc: (mes & 0b0000_0100) != 0,
+            ppi: (mes & 0b0000_1000) != 0,
+            // rfu       0b0001_0000
+            gyro: (mes & 0b0010_0000) != 0,
+            mag: (mes & 0b0100_0000) != 0,
         }
     }
 }
@@ -288,14 +288,14 @@ impl PolarSensor {
     /// # Errors
     ///
     /// Returns a [`Error::BleError`] if the Bluetooth manager could not be created.
-    pub async fn new(device_id: String) -> PolarResult<PolarSensor> {
+    pub async fn new(device_id: String) -> PolarResult<Self> {
         let ble_manager = Manager::new().await.map_err(Error::BleError)?;
 
         if device_id.len() != 8 {
             return Err(Error::InvalidLength);
         }
 
-        Ok(PolarSensor {
+        Ok(Self {
             device_id,
             ble_manager,
             ble_device: None,
@@ -609,7 +609,7 @@ impl PolarSensor {
     }
 
     /// Get data types.
-    pub fn data_type(&self) -> &Option<Vec<H10MeasurementType>> {
+    pub const fn data_type(&self) -> &Option<Vec<H10MeasurementType>> {
         &self.data_type
     }
 

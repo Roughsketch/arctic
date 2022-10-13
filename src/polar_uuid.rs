@@ -33,10 +33,10 @@ pub enum NotifyUuid {
 impl From<NotifyStream> for NotifyUuid {
     fn from(item: NotifyStream) -> Self {
         match item {
-            NotifyStream::Battery => NotifyUuid::BatteryLevel,
-            NotifyStream::HeartRate => NotifyUuid::HeartMeasurement,
-            NotifyStream::MeasurementData => NotifyUuid::MeasurementData,
-            NotifyStream::MeasurementCP => NotifyUuid::MeasurementCP,
+            NotifyStream::Battery => Self::BatteryLevel,
+            NotifyStream::HeartRate => Self::HeartMeasurement,
+            NotifyStream::MeasurementData => Self::MeasurementData,
+            NotifyStream::MeasurementCP => Self::MeasurementCP,
         }
     }
 }
