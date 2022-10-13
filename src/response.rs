@@ -49,7 +49,7 @@ pub struct PmdRead {
 }
 
 impl PmdRead {
-    /// Create new `PmdRead`
+    /// Create new [`PmdRead`]
     pub fn new(data_stream: Vec<u8>) -> PolarResult<PmdRead> {
         let data_type = H10MeasurementType::try_from(data_stream[0]);
         if let Err(_e) = data_type {
@@ -119,7 +119,7 @@ pub struct Ecg {
 }
 
 impl Ecg {
-    /// Convert data into ECG data
+    /// Create new instance of [`Ecg`]
     fn new(data: &Vec<u8>) -> PolarResult<Ecg> {
         if data.len() < 3 {
             eprintln!("ECG expects 3 bytes of data, got {}.", data.len());
@@ -148,7 +148,7 @@ pub struct Acc {
 }
 
 impl Acc {
-    /// Convert data into acceleration data
+    /// Create new instance of [`Acc`]
     fn new(data: &Vec<u8>) -> PolarResult<Acc> {
         if data.len() < 2 {
             eprintln!("Acceleration expects 2 bytes of data, got {}", data.len());
@@ -180,7 +180,7 @@ pub struct HeartRate {
 }
 
 impl HeartRate {
-    /// Create new instance of HR data
+    /// Create new instance of [`HeartRate`]
     pub fn new(data: Vec<u8>) -> PolarResult<HeartRate> {
         if data.len() < 2 {
             eprintln!(

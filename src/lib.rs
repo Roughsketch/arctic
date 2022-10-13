@@ -78,7 +78,7 @@ pub use response::{Acc, Ecg, HeartRate, PmdData, PmdRead};
 /// Error type for general errors and Ble errors from btleplug
 #[derive(Debug)]
 pub enum Error {
-    /// Not Bluetooth adapter found when trying to scan
+    /// No Bluetooth adapter found when trying to scan
     NoBleAdaptor,
     /// Could not create control point link
     NoControlPoint,
@@ -98,7 +98,7 @@ pub enum Error {
     NullCommand,
     /// Tried to create a struct using the wrong control point response
     WrongResponse,
-    /// Tried to set a setting using with a `H10MeasurementType` that doesn't support that feature
+    /// Tried to set a setting using with a [`H10MeasurementType`] that doesn't support that feature
     WrongType,
     /// An error occurred in the underlying BLE library
     BleError(btleplug::Error),
@@ -181,7 +181,7 @@ pub struct SupportedFeatures {
 }
 
 impl SupportedFeatures {
-    /// Create `SupportedFeatures`
+    /// Create [`SupportedFeatures`]
     pub fn new(mes: u8) -> SupportedFeatures {
         SupportedFeatures {
             ecg: (mes & 0b00000001) != 0,
@@ -210,7 +210,7 @@ pub trait EventHandler: Send + Sync {
 
     /// Dispatched when measurement data is received over the PMD data UUID
     ///
-    /// Contains data in a `PmdRead`
+    /// Contains data in a [`PmdRead`]
     async fn measurement_update(&self, _ctx: &PolarSensor, _data: PmdRead) {}
 
     /// Checked at start of each event loop
@@ -261,7 +261,7 @@ impl From<NotifyStream> for Uuid {
 /// // Do the actual connection. This will find the device and start the Bluetooth connection
 /// polar.connect().await.unwrap();
 /// # }
-/// // Can now subscribe to events, set event handler, run event_loop, etc
+/// // Can now subscribe to events, set event handler, run the event loop, etc
 /// ```
 pub struct PolarSensor {
     /// The device id written on the device (e.g, "8C4CAD2D")
@@ -464,7 +464,7 @@ impl PolarSensor {
         );
     }
 
-    /// Start measurement stream for `self.data_type`
+    /// Start measurement stream for one [`H10MeasurementType`]
     ///
     /// # Errors
     ///
@@ -720,9 +720,9 @@ impl PolarSensor {
     /// # Warning
     ///
     /// If the event is started without subscribing to anything, the event loop can hang forever,
-    /// and the closing condition trait function for `EventHandler` can't even close the loop.
-    /// Additionally, if you're only subscribed to `MeasurementData`, you have to make sure to
-    /// add a measurement type. Subscribing to `MeasurementCP` or `Battery` only also can cause
+    /// and the closing condition trait function for [`EventHandler`] can't even close the loop.
+    /// Additionally, if you're only subscribed to [`NotifyStream::MeasurementData`], you have to make sure to
+    /// add a measurement type. Subscribing to [`NotifyStream::MeasurementCP`] or [`NotifyStream::Battery`] only also can cause
     /// issues because they will send notifications rarely.
     pub async fn event_loop(&self) -> PolarResult<()> {
         // Stop any previous measurements that might not have been stopped properly
@@ -805,7 +805,7 @@ impl PolarSensor {
     }
 }
 
-/// Private helper to find characteristics from a UUID
+/// Private helper to find characteristics from a [`Uuid`]
 async fn find_characteristic(device: &Peripheral, uuid: Uuid) -> PolarResult<Characteristic> {
     device
         .characteristics()

@@ -22,6 +22,7 @@ const SOFTWARE_REVISION_STRING_UUID: Uuid = Uuid::from_u128(0x00002a28_0000_1000
 const SERIAL_NUMBER_STRING_UUID: Uuid = Uuid::from_u128(0x00002a25_0000_1000_8000_00805f9b34fb);
 const SYSTEM_ID_UUID: Uuid = Uuid::from_u128(0x00002a23_0000_1000_8000_00805f9b34fb);
 
+/// Which UUID to send BLE messages to
 pub enum NotifyUuid {
     BatteryLevel,
     HeartMeasurement,

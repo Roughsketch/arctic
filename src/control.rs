@@ -19,9 +19,9 @@ const PMD_DATA_UUID: Uuid = Uuid::from_u128(0xfb005c82_02e7_f387_1cad_8acd2d8df0
 pub enum ControlPointCommand {
     /// Do nothing
     Null = 0,
-    /// Get the measurement settings of every data type in `PolarSensor.data_type`
+    /// Get measurement settings for your data type
     GetMeasurementSettings,
-    /// Start measurement of every data type in `PolarSensor.data_type`
+    /// Start measurement for all data types
     RequestMeasurementStart,
     /// Stop all measurements in `PolarSensor.data_type`
     StopMeasurement,
@@ -273,14 +273,14 @@ impl StreamSettings {
 /// Store data returned from the device after a write to the control point
 #[derive(Debug)]
 pub struct ControlResponse {
-    opcode: ControlPointCommand,
+    op_code: ControlPointCommand,
     measurement_type: H10MeasurementType,
     status: ControlPointResponseCode,
     parameters: Vec<u8>,
 }
 
 impl ControlResponse {
-    /// Create new `ControlResponse`
+    /// Create new [`ControlResponse`]
     pub async fn new(data: Vec<u8>) -> PolarResult<ControlResponse> {
         // We need at least 4 bytes for a complete packet
         if data.len() < 4 {
@@ -290,7 +290,7 @@ impl ControlResponse {
         if data[0] != 0xf0 {
             return Err(Error::InvalidData);
         }
-        let opcode = ControlPointCommand::try_from(data[1]).map_err(|_| Error::InvalidData)?;
+        let op_code = ControlPointCommand::try_from(data[1]).map_err(|_| Error::InvalidData)?;
         let measurement_type =
             H10MeasurementType::try_from(data[2]).map_err(|_| Error::InvalidData)?;
         let status = ControlPointResponseCode::try_from(data[3]).map_err(|_| Error::InvalidData)?;
@@ -301,7 +301,7 @@ impl ControlResponse {
         }
 
         Ok(ControlResponse {
-            opcode,
+            op_code,
             measurement_type,
             status,
             parameters,
@@ -315,7 +315,7 @@ impl ControlResponse {
 
     /// Return op code of this response
     pub fn opcode(&self) -> &ControlPointCommand {
-        &self.opcode
+        &self.op_code
     }
 
     /// Get measurement type
@@ -337,7 +337,7 @@ pub struct ControlPoint {
 }
 
 impl ControlPoint {
-    /// Create new `ControlPoint`
+    /// Create new [`ControlPoint`]
     pub async fn new(device: &Peripheral) -> PolarResult<ControlPoint> {
         let control_point = find_characteristic(device, PMD_CP_UUID).await?;
         let measurement_data = find_characteristic(device, PMD_DATA_UUID).await?;
@@ -348,7 +348,7 @@ impl ControlPoint {
         })
     }
 
-    /// Send command to Control Point
+    /// Send command to [`ControlPoint`]
     pub async fn send_command(&self, device: &Peripheral, data: Vec<u8>) -> PolarResult<()> {
         self.write(device, data).await?;
 
@@ -362,7 +362,7 @@ impl ControlPoint {
             .map_err(Error::BleError)
     }
 
-    /// Read data from control point (for reading the features of a device)
+    /// Read data from [`ControlPoint`] (for reading the features of a device)
     pub async fn read(&self, device: &Peripheral) -> PolarResult<Vec<u8>> {
         device
             .read(&self.control_point)
