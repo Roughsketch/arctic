@@ -78,7 +78,7 @@ pub use response::{Acc, Ecg, HeartRate, PmdData, PmdRead};
 /// Error type for general errors and Ble errors from btleplug
 #[derive(Debug)]
 pub enum Error {
-    /// Not bluetooth adapter found when trying to scan
+    /// No bluetooth adapter found when trying to scan
     NoBleAdaptor,
     /// Could not create control point link
     NoControlPoint,
@@ -210,12 +210,12 @@ pub trait EventHandler: Send + Sync {
 
     /// Dispatched when measurement data is received over the PMD data UUID
     ///
-    /// Contains data in a `PmdRead`
+    /// Contains data in a [`PmdRead`]
     async fn measurement_update(&self, _ctx: &PolarSensor, _data: PmdRead) {}
 
     /// Checked at start of each event loop
     ///
-    /// Returns `false` if the event loop should terminate and close up
+    /// Returns [`false`] if the event loop should terminate and close up
     async fn should_continue(&self) -> bool {
         true
     }
@@ -232,7 +232,7 @@ pub enum NotifyStream {
     HeartRate,
     /// Receive updates from the control points, only for use within the library
     MeasurementCP,
-    /// Receive updates from the PMD data stream (acceleration or ecg)
+    /// Receive updates from the PMD data stream (acceleration or ECG)
     MeasurementData,
 }
 
@@ -246,7 +246,7 @@ impl From<NotifyStream> for Uuid {
 ///
 /// ## Example
 ///
-/// Order of operations for connecting and using a `PolarSensor`
+/// Order of operations for connecting and using a [`PolarSensor`]
 ///
 /// ```rust,no_run
 /// // Create the initial object. The new function takes a device ID which it
@@ -261,7 +261,7 @@ impl From<NotifyStream> for Uuid {
 /// // Do the actual connection. This will find the device and start the bluetooth connection
 /// polar.connect().await.unwrap();
 /// # }
-/// // Can now subscribe to events, set event handler, run event_loop, etc
+/// // Can now subscribe to events, set event handler, run the event loop, etc
 /// ```
 pub struct PolarSensor {
     /// The device id written on the device (e.g, "8C4CAD2D")
@@ -283,7 +283,7 @@ pub struct PolarSensor {
 }
 
 impl PolarSensor {
-    /// Creates a new PolarSensor.
+    /// Creates a new [`PolarSensor`].
     ///
     /// # Errors
     ///
@@ -406,7 +406,7 @@ impl PolarSensor {
         false
     }
 
-    /// Returns the rssi of your device and the H10, or None if you have no device
+    /// Returns the RSSI of your device and the H10, or None if you have no device
     pub async fn rssi(&self) -> Option<i16> {
         let device = self.device().await.ok()?;
 
@@ -464,7 +464,7 @@ impl PolarSensor {
         );
     }
 
-    /// Start measurement stream for `self.data_type`
+    /// Start measurement stream for [`H10MeasurementType`]
     ///
     /// # Errors
     ///
@@ -720,9 +720,9 @@ impl PolarSensor {
     /// # Warning
     ///
     /// If the event is started without subscribing to anything, the event loop can hang forever,
-    /// and the closing condition trait function for `EventHandler` can't even close the loop.
-    /// Additionally, if you're only subscribed to `MeasurementData`, you have to make sure to
-    /// add a measurement type. Subscribing to `MeasurementCP` or `Battery` only also can cause
+    /// and the closing condition trait function for [`EventHandler`] can't even close the loop.
+    /// Additionally, if you're only subscribed to [`NotifyStream::MeasurementData`], you have to make sure to
+    /// add a measurement type. Subscribing to [`NotifyStream::MeasurementCP`] or [`NotifyStream::Battery`] only also can cause
     /// issues because they will send notifications rarely.
     pub async fn event_loop(&self) -> PolarResult<()> {
         // Stop any previous measurements that might not have been stopped properly
@@ -805,7 +805,7 @@ impl PolarSensor {
     }
 }
 
-/// Private helper to find characteristics from a uuid
+/// Private helper to find characteristics from a [`Uuid`]
 async fn find_characteristic(device: &Peripheral, uuid: Uuid) -> PolarResult<Characteristic> {
     device
         .characteristics()

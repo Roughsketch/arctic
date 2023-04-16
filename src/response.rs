@@ -1,6 +1,6 @@
 //! # Response
 //!
-//! Response contains types related to PMD data respones. Structures to interpret this data are found here
+//! Response contains types related to PMD data responses. Structures to interpret this data are found here.
 //!
 
 use crate::{Error, H10MeasurementType, PolarResult};
@@ -40,7 +40,7 @@ fn bytes_to_data(data: &[u8], len: usize) -> i32 {
     }
 }
 
-/// Struct for reveiving measurement type data on PMD data
+/// Struct for receiving measurement type data on PMD data
 #[derive(Debug)]
 pub struct PmdRead {
     data_type: H10MeasurementType,
@@ -49,7 +49,7 @@ pub struct PmdRead {
 }
 
 impl PmdRead {
-    /// Create new `PmdRead`
+    /// Create new [`PmdRead`]
     pub fn new(data_stream: Vec<u8>) -> PolarResult<PmdRead> {
         let data_type = H10MeasurementType::try_from(data_stream[0]);
         if let Err(_e) = data_type {
@@ -106,7 +106,7 @@ impl PmdRead {
 /// Enum to store which kind of data was received
 #[derive(Debug)]
 pub enum PmdData {
-    /// Electrocardiagram
+    /// Electrocardiogram
     Ecg(Ecg),
     /// Acceleration
     Acc(Acc),
@@ -119,7 +119,7 @@ pub struct Ecg {
 }
 
 impl Ecg {
-    /// Convert data into ECG data
+    /// Create new instance of [`Ecg`]
     fn new(data: &Vec<u8>) -> PolarResult<Ecg> {
         if data.len() < 3 {
             eprintln!("ECG expects 3 bytes of data, got {}.", data.len());
@@ -148,7 +148,7 @@ pub struct Acc {
 }
 
 impl Acc {
-    /// Convert data into acceleration data
+    /// Create new instance of [`Acc`]
     fn new(data: &Vec<u8>) -> PolarResult<Acc> {
         if data.len() < 2 {
             eprintln!("Acceleration expects 2 bytes of data, got {}", data.len());
@@ -180,7 +180,7 @@ pub struct HeartRate {
 }
 
 impl HeartRate {
-    /// Create new instance of HR data
+    /// Create new instance of [`HeartRate`]
     pub fn new(data: Vec<u8>) -> PolarResult<HeartRate> {
         if data.len() < 2 {
             eprintln!(
@@ -200,7 +200,8 @@ impl HeartRate {
         let mut rr_samp = vec![];
 
         for i in 0..samples {
-            rr_samp.push(((bytes_to_data(&data[i * 2 + 2..i * 2 + 4], 2) as u32 * 128) / 125) as u16); // rr values are stored as 1024ths of a second, convert to ms
+            // rr values are stored as 1024ths of a second, convert to ms
+            rr_samp.push(((bytes_to_data(&data[i * 2 + 2..i * 2 + 4], 2) as u32 * 128) / 125) as u16);
         }
 
         let rr = if !rr_samp.is_empty() {
@@ -212,7 +213,7 @@ impl HeartRate {
         Ok(HeartRate { bpm, rr })
     }
 
-    /// Get BPM of heartrate measurement
+    /// Get BPM of heart rate measurement
     pub fn bpm(&self) -> &u8 {
         &self.bpm
     }
@@ -232,7 +233,7 @@ mod test {
     fn pmd_read_acc_new() {
         let response = PmdRead::new(vec![
             0x02, 0xea, 0x54, 0xa2, 0x42, 0x8b, 0x45, 0x52, 0x08, 0x01, 0x45, 0xff, 0xe4, 0xff,
-            0xb5, 0x03, 0x45, 0xff, 0xe4, 0xff, 0xb8, 03,
+            0xb5, 0x03, 0x45, 0xff, 0xe4, 0xff, 0xb8, 0x03,
         ])
         .unwrap();
 
