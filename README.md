@@ -3,7 +3,7 @@
 
 Rust library for handling Polar bluetooth heart rate monitors.
 
-Currently only targetting support for H10 due to lack of other devices.
+Currently only targeting support for H10 due to lack of other devices.
 
 ### Note for MacOS
 

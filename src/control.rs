@@ -19,11 +19,11 @@ const PMD_DATA_UUID: Uuid = Uuid::from_u128(0xfb005c82_02e7_f387_1cad_8acd2d8df0
 pub enum ControlPointCommand {
     /// Do nothing
     Null = 0,
-    /// Get the measurement settings of every data type in `PolarSensor.data_type`
+    /// Get measurement settings for your data type
     GetMeasurementSettings,
-    /// Start measurement of every data type in `PolarSensor.data_type`
+    /// Start measurement all data types
     RequestMeasurementStart,
-    /// Stop all measurements in `PolarSensor.data_type`
+    /// Stop all measurements in [`PolarSensor.data_type`]
     StopMeasurement,
 }
 
@@ -294,11 +294,11 @@ impl ControlResponse {
         let measurement_type =
             H10MeasurementType::try_from(data[2]).map_err(|_| Error::InvalidData)?;
         let status = ControlPointResponseCode::try_from(data[3]).map_err(|_| Error::InvalidData)?;
-        let mut parameters = Vec::new();
-
-        if data.len() > 5 {
-            parameters = data[5..].to_vec();
-        }
+        let parameters = if data.len() > 5 {
+            data[5..].to_vec()
+        } else {
+            Vec::new()
+        };
 
         Ok(ControlResponse {
             opcode,
